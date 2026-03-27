@@ -1,0 +1,163 @@
+{
+  "mcpVersion": "0.2.0",
+  "projectInfo": {
+    "name": "qq-dld",
+    "displayName": "QQ 大乐斗助手",
+    "version": "2.0.0",
+    "description": "QQ 大乐斗自动任务系统 - Node.js 自动化工具",
+    "mainLanguage": "javascript",
+    "framework": "express"
+  },
+  "contextProviders": [
+    {
+      "name": "project-structure",
+      "description": "项目目录结构和核心模块说明",
+      "config": {
+        "rootStructure": {
+          "src/actions": "游戏操作模块 (每日奖励、乐斗好友等)",
+          "src/core": "核心层 (Action 基类、GameClient HTTP 封装)",
+          "src/db": "SQLite 数据库操作",
+          "src/game": "扫码登录模块",
+          "src/scheduler": "定时任务调度",
+          "src/web": "Express Web 服务",
+          "data": "SQLite 数据库文件",
+          "public": "前端静态资源",
+          "tests": "Playwright E2E 测试"
+        }
+      }
+    },
+    {
+      "name": "code-conventions",
+      "description": "代码规范和开发约定",
+      "config": {
+        "moduleSystem": "CommonJS (require)",
+        "asyncPattern": "async/await",
+        "indentation": "2 spaces",
+        "quotes": "single",
+        "fileNaming": "kebab-case.js",
+        "exportPattern": "module.exports = { ClassName, action: new ClassName() }"
+      }
+    },
+    {
+      "name": "api-endpoints",
+      "description": "Web API 端点列表",
+      "config": {
+        "endpoints": {
+          "GET /api/status": "检查登录状态",
+          "POST /api/login": "扫码登录",
+          "GET /api/modules": "获取所有模块配置",
+          "GET /api/modules/:id": "获取指定模块配置",
+          "POST /api/modules/:id": "更新模块配置",
+          "POST /api/run/:id": "执行指定模块",
+          "GET /api/logs": "获取执行日志",
+          "DELETE /api/logs": "清空日志",
+          "GET /api/xia-friends": "获取侠侣列表",
+          "POST /api/scan-xia-friends": "扫描好友列表",
+          "POST /api/xia-friends": "保存好友列表"
+        }
+      }
+    },
+    {
+      "name": "database-schema",
+      "description": "数据库表结构",
+      "config": {
+        "tables": {
+          "module_configs": "模块配置表 (id, name, category, cmd, params, auto_enabled, auto_time, manual_enabled)",
+          "exec_logs": "执行日志表 (module_id, module_name, command, result, status, created_at)",
+          "cookies": "登录 Cookie 表 (id=1, value, updated_at)",
+          "settings": "系统设置表 (key, value)"
+        }
+      }
+    },
+    {
+      "name": "actions-registry",
+      "description": "游戏操作模块注册",
+      "config": {
+        "actions": {
+          "dailygift": {
+            "name": "每日奖励",
+            "category": "每日任务",
+            "gifts": ["每日礼包", "传功符礼包", "达人礼包", "无字天书礼包"]
+          },
+          "friendfight": {
+            "name": "乐斗好友",
+            "category": "好友",
+            "types": ["好友", "帮友", "侠侣"]
+          }
+        }
+      }
+    },
+    {
+      "name": "external-apis",
+      "description": "外部 API 和游戏接口",
+      "config": {
+        "baseUrl": "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36",
+          "Referer": "https://dld.qzapp.z.qq.com/"
+        },
+        "rateLimit": {
+          "requestDelay": 1500,
+          "maxRetries": 3,
+          "retryDelay": 2000
+        },
+        "busyPatterns": ["很抱歉，系统繁忙", "系统繁忙", "请稍后再试", "请求过于频繁"]
+      }
+    }
+  ],
+  "developmentCommands": {
+    "start": "npm start",
+    "dev": "npm run dev",
+    "test": "npx playwright test",
+    "testReport": "npx playwright show-report"
+  },
+  "agentSkills": [
+    {
+      "name": "qq-dld-expert",
+      "description": "QQ 大乐斗项目专家，熟悉游戏接口、模块开发和定时任务配置",
+      "triggers": ["qq 大乐斗", "游戏模块", "自动任务", "乐斗好友"]
+    },
+    {
+      "name": "nodejs-backend",
+      "description": "Node.js 后端开发专家，擅长 Express、SQLite、Puppeteer",
+      "triggers": ["API 开发", "数据库", "爬虫", "自动化"]
+    },
+    {
+      "name": "test-engineer",
+      "description": "测试工程师，擅长 Playwright E2E 测试和 TDD 开发",
+      "triggers": ["测试", "E2E", "coverage", "bug"]
+    }
+  ],
+  "keyFiles": [
+    {
+      "path": "src/web/index.js",
+      "role": "entry-point",
+      "description": "应用入口和 API 路由"
+    },
+    {
+      "path": "src/core/game-client.js",
+      "role": "core",
+      "description": "HTTP 请求封装，处理限流重试"
+    },
+    {
+      "path": "src/core/action-base.js",
+      "role": "core",
+      "description": "Action 基类，所有模块的父类"
+    },
+    {
+      "path": "src/db/index.js",
+      "role": "core",
+      "description": "SQLite 数据库封装"
+    },
+    {
+      "path": "src/actions/index.js",
+      "role": "registry",
+      "description": "模块注册中心"
+    },
+    {
+      "path": "src/scheduler/index.js",
+      "role": "feature",
+      "description": "定时任务调度器"
+    }
+  ]
+}
