@@ -1,7 +1,7 @@
 {
   "name": "qq-dld",
   "version": "2.0.0",
-  "description": "QQ大乐斗自动任务系统",
+  "description": "QQ 大乐斗自动任务系统 (开发中)",
   "main": "src/web/index.js",
   "scripts": {
     "start": "node src/web/index.js",

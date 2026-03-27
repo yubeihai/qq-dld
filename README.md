@@ -1,5 +1,7 @@
 # QQ 大乐斗助手
 
+> ⚠️ **项目开发中** - 功能持续更新中，欢迎贡献！
+
 QQ 大乐斗自动任务系统 - 基于 Node.js 的 Web 自动化工具，支持扫码登录、每日任务、乐斗好友等功能。
 
 ## 功能特性
@@ -51,6 +53,9 @@ npm install
 
 # 启动服务
 npm start
+
+# 停止服务 (Windows)
+npm run stop
 ```
 
 启动成功后访问：http://localhost:3000
