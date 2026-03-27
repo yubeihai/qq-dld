@@ -1,0 +1,21 @@
+{
+  "name": "qq-dld",
+  "version": "2.0.0",
+  "description": "QQ大乐斗自动任务系统",
+  "main": "src/web/index.js",
+  "scripts": {
+    "start": "node src/web/index.js",
+    "stop": "node stop.js",
+    "dev": "node src/web/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "express": "^4.18.2",
+    "node-schedule": "^2.1.1",
+    "puppeteer-core": "^22.6.4",
+    "sql.js": "^1.10.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

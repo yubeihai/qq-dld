@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QQ 大乐斗助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; }
+    
+    .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .navbar h1 { font-size: 20px; font-weight: 600; }
+    .nav-tabs { display: flex; gap: 8px; }
+    .nav-tab { padding: 8px 16px; cursor: pointer; border-radius: 6px; transition: all 0.3s; font-size: 14px; }
+    .nav-tab:hover { background: rgba(255,255,255,0.2); }
+    .nav-tab.active { background: rgba(255,255,255,0.3); font-weight: 500; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+    .status-badge.online { background: rgba(82, 196, 26, 0.9); }
+    .status-badge.offline { background: rgba(255, 77, 79, 0.9); }
+    
+    .container { padding: 84px 24px 24px; max-width: 1200px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #262626; display: flex; align-items: center; gap: 8px; }
+    .card-title::before { content: ''; width: 4px; height: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 2px; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .stat-card.purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-card.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .stat-card.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .stat-value { font-size: 32px; font-weight: 700; margin: 8px 0; }
+    .stat-label { font-size: 14px; opacity: 0.9; }
+    
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+    .btn-success:hover { box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4); }
+    .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
+    .btn-secondary { background: #f5f5f5; color: #595959; border: 1px solid #d9d9d9; }
+    .btn-sm { padding: 4px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block; }
+    .badge-success { background: #f6ffed; color: #52c41a; }
+    .badge-error { background: #fff2f0; color: #ff4d4f; }
+    .badge-info { background: #e6f7ff; color: #1890ff; }
+    
+    .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .module-card { border: 1px solid #e8e8e8; border-radius: 12px; padding: 20px; background: white; transition: all 0.3s; }
+    .module-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .module-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+    .module-card-header h3 { font-size: 16px; color: #262626; font-weight: 600; }
+    .module-info { font-size: 13px; color: #8c8c8c; margin-bottom: 12px; line-height: 1.8; }
+    .module-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .log-area { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 12px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; max-height: 500px; overflow-y: auto; line-height: 1.6; }
+.log-line { margin: 4px 0; padding: 8px 0; }
+.log-success { color: #81c784; }
+.log-error { color: #e57373; }
+.log-time { color: #888; margin-right: 8px; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: white; border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-header h2 { font-size: 20px; color: #262626; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8c8c8c; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 500; color: #262626; font-size: 14px; }
+    .form-input, .form-select { width: 100%; padding: 10px 14px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; }
+    .form-input:focus, .form-select:focus { border-color: #667eea; outline: none; }
+    
+    .friend-card { padding: 14px 16px; border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 10px; background: white; display: flex; justify-content: space-between; align-items: center; }
+    .friend-card:hover { border-color: #667eea; }
+    .friend-info { display: flex; align-items: center; gap: 12px; }
+    .friend-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; }
+    .friend-name { font-weight: 600; color: #262626; }
+    
+    .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .store-item { padding: 16px; border: 1px solid #e8e8e8; border-radius: 8px; background: white; transition: all 0.3s; text-align: center; }
+    .store-item:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15); }
+    .store-item-name { font-weight: 600; color: #262626; font-size: 14px; margin-bottom: 8px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+    .store-item-count { color: #667eea; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .store-item-desc { font-size: 12px; color: #8c8c8c; line-height: 1.6; }
+    
+    .action-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+    th { background: #fafafa; font-weight: 600; }
+    
+    .hidden { display: none !important; }
+    .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>QQ 大乐斗助手</h1>
+<div class="nav-tabs">
+        <div class="nav-tab active" data-page="home">首页</div>
+        <div class="nav-tab" data-page="modules">模块配置</div>
+        <div class="nav-tab" data-page="tasks">任务配置</div>
+        <div class="nav-tab" data-page="knight">侠客行</div>
+        <div class="nav-tab" data-page="store">背包</div>
+        <div class="nav-tab" data-page="friends">侠友管理</div>
+        <div class="nav-tab" data-page="logs">执行日志</div>
+      </div>
+    <div class="nav-right">
+      <span id="statusBadge" class="status-badge offline">未登录</span>
+      <button id="loginBtn" class="btn btn-primary">扫码登录</button>
+      <button id="logoutBtn" class="btn btn-danger hidden" onclick="logout()">退出登录</button>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div id="home" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card purple">
+          <div class="stat-label">今日执行</div>
+          <div class="stat-value" id="statToday">-</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">成功率</div>
+          <div class="stat-value" id="statRate">-</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">侠友数量</div>
+          <div class="stat-value" id="statFriends">-</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">快速操作</div>
+        <div class="modules-grid">
+          <div class="module-card">
+            <div class="module-card-header">
+              <h3>每日奖励</h3>
+              <span class="badge badge-info">每日任务</span>
+            </div>
+            <div class="module-info">领取每日礼包、传功符礼包、达人礼包、无字天书礼包</div>
+            <div class="module-actions">
+              <button class="btn btn-success" onclick="runModule('dailygift')">领取</button>
+            </div>
+          </div>
+          <div class="module-card">
+            <div class="module-card-header">
+              <h3>乐斗好友</h3>
+              <span class="badge badge-info">好友</span>
+            </div>
+            <div class="module-info">乐斗好友、帮友、侠侣</div>
+            <div class="module-actions">
+              <button class="btn btn-success" onclick="runModule('friendfight')">乐斗</button>
+            </div>
+          </div>
+          <div class="module-card">
+            <div class="module-card-header">
+              <h3>历练</h3>
+              <span class="badge badge-info">历练</span>
+            </div>
+            <div class="module-info">在世界场景中进行历练战斗，获取经验和阅历。地图配置请在"模块配置"页面设置。</div>
+            <div class="module-actions">
+              <button class="btn btn-success" onclick="runModule('adventure')">历练</button>
+            </div>
+          </div>
+          <div class="module-card">
+            <div class="module-card-header">
+              <h3>帮派</h3>
+              <span class="badge badge-info">帮派</span>
+            </div>
+            <div class="module-info">帮派供奉守护神、完成帮派任务。供奉物品请在"背包"页面配置。</div>
+            <div class="module-actions">
+              <button class="btn btn-success" onclick="runFaction('all')">执行帮派</button>
+              <button class="btn btn-primary" onclick="runFaction('oblate')">供奉</button>
+              <button class="btn btn-secondary" onclick="runFaction('tasks')">帮派任务</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">最近日志</div>
+        <div class="log-area" id="recentLogs">加载中...</div>
+      </div>
+    </div>
+    
+    <div id="modules" class="page">
+      <div class="card">
+        <div class="card-title">模块配置</div>
+        <div class="action-bar">
+          <button class="btn btn-secondary btn-sm" onclick="resetModules()">重置模块列表</button>
+        </div>
+        <div id="modulesList"></div>
+      </div>
+    </div>
+    
+    <div id="tasks" class="page">
+      <div class="card">
+        <div class="card-title">任务配置</div>
+        <div class="action-bar">
+          <button class="btn btn-success" onclick="refreshTaskList()">获取今日任务</button>
+          <button class="btn btn-primary" onclick="runDailyTasks()">执行日常任务</button>
+        </div>
+        <p style="color:#8c8c8c;font-size:13px;margin-bottom:16px;">
+          说明：设置每个任务的处理方式。<strong>执行模块</strong>会先执行对应模块，成功后领取奖励；<strong>替换任务</strong>会直接替换掉该任务；<strong>跳过</strong>会忽略该任务。
+        </p>
+        <div id="taskConfigList"></div>
+      </div>
+    </div>
+    
+    <div id="knight" class="page">
+      <div class="card">
+        <div class="card-title">侠客行任务配置</div>
+        <div class="action-bar">
+          <button class="btn btn-success" onclick="refreshKnightMissions()">获取今日任务</button>
+          <button class="btn btn-primary" onclick="runKnightMissions()">执行侠客行</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadKnightMissionConfigs()">刷新配置</button>
+        </div>
+        <p style="color:#8c8c8c;font-size:13px;margin-bottom:16px;">
+          <strong>任务库机制：</strong>首次执行时会自动发现任务并加入任务库。<br>
+          勾选的任务会被<strong>接受</strong>，未勾选的任务会被<strong>刷新</strong>。新发现的任务默认不勾选，需手动配置。
+        </p>
+        <div id="knightMissionStatus" style="margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:8px;display:none;">
+          <span id="knightAcceptedStatus">-</span> | <span id="knightRefreshStatus">-</span>
+        </div>
+        <div id="knightMissionList"></div>
+      </div>
+    </div>
+    
+    <div id="store" class="page">
+      <div class="card">
+        <div class="card-title">背包物品</div>
+        <div class="action-bar">
+          <button class="btn btn-success" onclick="scanStore()">扫描背包</button>
+          <button class="btn btn-primary" onclick="viewOblationConfig()">查看供奉配置</button>
+          <button class="btn btn-danger" onclick="clearOblationConfig()">清空供奉配置</button>
+          <select id="storeTab" class="form-select" style="width:auto;display:inline-block;padding:8px 12px;" onchange="filterByTab()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <p style="color:#8c8c8c;font-size:13px;margin-bottom:16px;">
+          点击物品卡片上的"设为供奉"按钮，可将该物品设为供奉物品。供奉配置会保存，之后在帮派模块执行供奉时会自动使用配置的物品。
+        </p>
+        <div id="storeList"></div>
+      </div>
+    </div>
+    
+    <div id="friends" class="page">
+      <div class="card">
+        <div class="card-title">侠友管理</div>
+        <div class="action-bar">
+          <button class="btn btn-success" onclick="scanFriends()">扫描侠友</button>
+          <button class="btn btn-secondary" onclick="loadFriends()">刷新</button>
+          <button class="btn btn-danger" onclick="clearFriends()">清空</button>
+        </div>
+        <div id="friendsList"></div>
+      </div>
+    </div>
+    
+    <div id="logs" class="page">
+      <div class="card">
+        <div class="card-title">执行日志</div>
+        <div class="action-bar">
+          <input type="date" id="logDate" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+          <button class="btn btn-secondary" onclick="loadLogs()">查询</button>
+          <button class="btn btn-danger" onclick="clearLogs()">清空</button>
+        </div>
+        <div id="logsTable"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="loginModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+      <div class="modal-header">
+        <h2>扫码登录</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <p style="margin-bottom: 20px; color: #8c8c8c;">请在弹出的浏览器窗口中扫码登录</p>
+      <div id="loginStatus">等待扫码...</div>
+    </div>
+  </div>
+
+  <script>
+    let friends = [];
+    let storeItems = [];
+    let storeTabs = [];
+    const ADVENTURE_MAPS = [
+      { id: 1, name: '乐斗村', levelRange: '1~10级' },
+      { id: 2, name: '林松郊外', levelRange: '10~20级' },
+      { id: 3, name: '林松城', levelRange: '20~25级' },
+      { id: 4, name: '东海龙宫', levelRange: '25~30级' },
+      { id: 5, name: '踏云镇', levelRange: '30~34级' },
+      { id: 6, name: '摩云山', levelRange: '34~37级' },
+      { id: 7, name: '洞庭湖', levelRange: '37~40级' },
+      { id: 8, name: '苍莽山', levelRange: '40~44级' },
+      { id: 9, name: '玉龙湿地', levelRange: '44~47级' },
+      { id: 10, name: '玉龙雪山', levelRange: '47~50级' },
+      { id: 11, name: '狂沙台地', levelRange: '50~53级' },
+      { id: 12, name: '回声遗迹', levelRange: '53~56级' },
+      { id: 13, name: '悲叹山丘', levelRange: '57~60级' },
+      { id: 14, name: '黄沙漩涡', levelRange: '61~64级' },
+      { id: 15, name: '炎之洞窟', levelRange: '65~68级' },
+      { id: 16, name: '程管小镇', levelRange: '69~73级' },
+      { id: 17, name: '花果山', levelRange: '74~78级' },
+      { id: 18, name: '藏剑山庄', levelRange: '79~83级' },
+      { id: 19, name: '桃花剑冢', levelRange: '84~88级' },
+      { id: 20, name: '鹅王的试炼', levelRange: '89~93级' },
+    ];
+    
+    const ZODIAC_LIST = [
+      { id: 1000, name: '白羊宫', levelRange: '推荐50-55' },
+      { id: 1001, name: '金牛宫', levelRange: '推荐55-60' },
+      { id: 1002, name: '双子宫', levelRange: '推荐60-65' },
+      { id: 1003, name: '巨蟹宫', levelRange: '推荐65-70' },
+      { id: 1004, name: '狮子宫', levelRange: '推荐70-75' },
+      { id: 1005, name: '处女宫', levelRange: '推荐75-80' },
+      { id: 1006, name: '天秤宫', levelRange: '推荐80-85' },
+      { id: 1007, name: '天蝎宫', levelRange: '推荐85-90' },
+      { id: 1008, name: '射手宫', levelRange: '推荐90-95' },
+      { id: 1009, name: '摩羯宫', levelRange: '推荐95-100' },
+      { id: 1010, name: '水瓶宫', levelRange: '推荐101-110' },
+      { id: 1011, name: '双鱼宫', levelRange: '推荐111-120' },
+    ];
+    
+    const MISTY_STAGES = [
+      { id: 1, name: '乐斗村' },
+      { id: 2, name: '林松郊外' },
+      { id: 3, name: '林松城' },
+      { id: 4, name: '东海龙宫' },
+      { id: 5, name: '踏云镇' },
+      { id: 6, name: '摩云山' },
+      { id: 7, name: '洞庭湖' },
+      { id: 8, name: '苍莽山' },
+      { id: 9, name: '玉龙湿地' },
+      { id: 10, name: '玉龙雪山' },
+      { id: 11, name: '狂沙台地' },
+      { id: 12, name: '回声遗迹' },
+      { id: 13, name: '悲叹山丘' },
+      { id: 14, name: '黄沙漩涡' },
+      { id: 15, name: '炎之洞窟' },
+      { id: 16, name: '程管小镇' },
+      { id: 17, name: '花果山' },
+      { id: 18, name: '藏剑山庄' },
+      { id: 19, name: '桃花剑冢' },
+      { id: 20, name: '鹅王的试炼' },
+    ];
+    
+    const FORMATION_TYPES = [
+      { id: 1, name: '无字天书' },
+      { id: 2, name: '河图洛书' },
+      { id: 3, name: '易经八卦' },
+      { id: 4, name: '黄帝内经' },
+    ];
+    
+    const FORMATION_LIST = {
+      1: [
+        { id: '1', name: '毒光剑影' },
+        { id: '2', name: '正邪两立' },
+        { id: '3', name: '纵剑天下' },
+        { id: '9', name: '致命一击' },
+        { id: '4', name: '老谋深算' },
+        { id: '5', name: '智勇双全' },
+        { id: '6', name: '以柔克刚' },
+        { id: '7', name: '雕心鹰爪' },
+        { id: '8', name: '根骨奇特' },
+      ],
+      2: [
+        { id: '10', name: '左旋之理' },
+        { id: '11', name: '象形之理' },
+        { id: '12', name: '五行之理' },
+        { id: '13', name: '阴阳之理' },
+        { id: '14', name: '先天之理' },
+        { id: '15', name: '九宫之理' },
+        { id: '16', name: '幻方之理' },
+        { id: '17', name: '逆克之理' },
+        { id: '18', name: '河洛之理' },
+      ],
+      3: [
+        { id: '19', name: '乾为首' },
+        { id: '20', name: '坤为腹' },
+        { id: '21', name: '震为足' },
+        { id: '22', name: '巽为股' },
+        { id: '23', name: '坎为耳' },
+        { id: '24', name: '离为目' },
+        { id: '25', name: '艮为手' },
+        { id: '26', name: '兑为口' },
+        { id: '27', name: '大道之源' },
+      ],
+      4: [
+        { id: '28', name: '忧患无言' },
+        { id: '29', name: '阴阳应象' },
+        { id: '30', name: '四时刺逆' },
+        { id: '31', name: '阴阳离合' },
+        { id: '32', name: '刺节真邪' },
+        { id: '33', name: '五音五味' },
+        { id: '34', name: '平人绝谷' },
+        { id: '35', name: '宝命全形' },
+        { id: '36', name: '玉机真藏' },
+      ],
+    };
+    
+    const SWEEP_TYPES = [
+      { id: 0, name: '请猴王扫荡', desc: '普通扫荡' },
+      { id: 1, name: '请城管扫荡', desc: '回复+1，扣50斗豆' },
+      { id: 2, name: '请鹅王扫荡', desc: '回复+2，扣200斗豆' },
+    ];
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      initNav();
+      checkStatus();
+      loadStats();
+      loadFriends();
+      loadModules();
+      loadTaskConfigs();
+      loadKnightMissionConfigs();
+      
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('logDate').value = today;
+      loadLogs();
+    });
+    
+    function initNav() {
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+          document.getElementById(tab.dataset.page).classList.add('active');
+        });
+      });
+    }
+    
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const badge = document.getElementById('statusBadge');
+        const btn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (data.loggedIn) {
+          badge.className = 'status-badge online';
+          badge.textContent = '已登录';
+          btn.classList.add('hidden');
+          logoutBtn.classList.remove('hidden');
+        } else {
+          badge.className = 'status-badge offline';
+          badge.textContent = '未登录';
+          btn.classList.remove('hidden');
+          logoutBtn.classList.add('hidden');
+        }
+      } catch (e) {}
+    }
+    
+    async function logout() {
+      if (!confirm('确定退出登录？')) return;
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        checkStatus();
+      } catch (e) {
+        alert('退出失败：' + e.message);
+      }
+    }
+    
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      document.getElementById('loginModal').classList.add('active');
+      document.getElementById('loginStatus').textContent = '正在打开浏览器...';
+      try {
+        await fetch('/api/login', { method: 'POST' });
+        document.getElementById('loginStatus').textContent = '请扫码登录...';
+        setTimeout(async () => {
+          await checkStatus();
+          if (document.getElementById('statusBadge').classList.contains('online')) {
+            document.getElementById('loginStatus').textContent = '登录成功！';
+            setTimeout(() => closeModal(), 1000);
+          }
+        }, 3000);
+      } catch (e) {
+        document.getElementById('loginStatus').textContent = '登录失败：' + e.message;
+      }
+    });
+    
+    function closeModal() {
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    }
+    
+    async function loadStats() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const logsRes = await fetch(`/api/logs?date=${today}`);
+        const logs = await logsRes.json();
+        const friendsRes = await fetch('/api/xia-friends');
+        const friendsData = await friendsRes.json();
+        
+        const successRate = logs.length > 0 ? Math.round(logs.filter(l => l.status === 'success').length / logs.length * 100) + '%' : '-';
+        
+        document.getElementById('statToday').textContent = logs.length;
+        document.getElementById('statRate').textContent = successRate;
+        document.getElementById('statFriends').textContent = friendsData.length || 0;
+        
+        const recentLogs = document.getElementById('recentLogs');
+        if (logs.length > 0) {
+          recentLogs.innerHTML = logs.slice(0, 10).map(l => {
+            const time = new Date(l.created_at).toLocaleTimeString('zh-CN');
+            const cls = l.status === 'success' ? 'log-success' : 'log-error';
+            const result = l.result || '';
+            const lines = result.split('\n');
+            const summary = lines[0] || '';
+            const details = lines.slice(1).join('\n');
+            return `<div class="log-line ${cls}">
+              <div><span class="log-time">[${time}]</span><strong>${l.module_name}</strong></div>
+              <div style="margin-top:4px;color:#aaa;">${escapeHtml(summary)}</div>
+              ${details ? `<div style="margin-top:4px;color:#888;font-size:12px;white-space:pre-wrap;">${escapeHtml(details)}</div>` : ''}
+            </div>`;
+          }).join('<div style="border-bottom:1px solid #333;margin:8px 0;"></div>');
+        } else {
+          recentLogs.innerHTML = '<div class="log-line">暂无日志</div>';
+        }
+      } catch (e) {}
+    }
+    
+    async function runModule(id) {
+      const btn = event.target;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 执行中...';
+      btn.disabled = true;
+      
+      try {
+        let params = {};
+        if (id === 'friendfight') {
+          const enabled = friends.filter(f => f.enabled !== false);
+          if (enabled.length === 0) {
+            alert('请先在"侠友管理"中扫描并勾选侠友');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+          }
+        }
+        
+        if (id === 'adventure') {
+          const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleAdventureMap(this)"]:checked');
+          const mapIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+          if (mapIds.length === 0) {
+            alert('请先在模块配置中选择历练地图');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+          }
+          params.mapIds = mapIds;
+        }
+        
+        if (id === 'zodiac') {
+          const radio = document.querySelector('input[name="zodiacScene"]:checked');
+          if (!radio) {
+            alert('请先在模块配置中选择要扫荡的宫殿');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+          }
+          params.sceneIds = [parseInt(radio.value)];
+          const sweepTypeSelect = document.getElementById('zodiacSweepType');
+          if (sweepTypeSelect) {
+            params.sweepType = parseInt(sweepTypeSelect.value);
+          }
+        }
+        
+        if (id === 'formation') {
+          const res = await fetch('/api/modules/formation');
+          const moduleData = await res.json();
+          if (moduleData.extra_data && moduleData.extra_data.formations && moduleData.extra_data.formations.length > 0) {
+            params.formations = moduleData.extra_data.formations;
+          } else {
+            alert('请先在模块配置中勾选要提升的助阵');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+          }
+        }
+        
+        const res = await fetch(`/api/run/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          let msg = data.result || '';
+          if (id === 'adventure' && data.maps) {
+            msg = data.maps.map(r => {
+              if (r.error) return `${r.map}: ${r.error}`;
+              let line = `${r.map}[${r.boss}]: ${r.success}胜${r.fail}败`;
+              if (r.exp > 0) line += ` 阅历+${r.exp}`;
+              if (r.items && r.items.length > 0) line += ` ${r.items.join(' ')}`;
+              return line;
+            }).join('\n');
+            if (data.totalExp > 0) msg += `\n\n总计阅历+${data.totalExp}`;
+            if (data.items && data.items.length > 0) msg += `\n获得物品: ${data.items.join(', ')}`;
+          }
+          if (id === 'zodiac' && data.sweeps) {
+            msg = `${data.zodiac}(${data.sweepType})\n` + data.sweeps.map((s, i) => `第${i + 1}次: ${s.message}`).join('\n');
+          }
+          alert('执行成功\n' + msg);
+          loadStats();
+          loadLogs();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+      
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+    
+    async function loadFriends() {
+      try {
+        const res = await fetch('/api/xia-friends');
+        friends = await res.json();
+        renderFriends();
+        loadStats();
+      } catch (e) {
+        document.getElementById('friendsList').innerHTML = '<p style="color:#ff4d4f;">加载失败</p>';
+      }
+    }
+    
+    function renderFriends() {
+      const list = document.getElementById('friendsList');
+      if (friends.length === 0) {
+        list.innerHTML = '<p style="color:#8c8c8c;padding:40px;text-align:center;">暂无侠友，点击"扫描侠友"</p>';
+        return;
+      }
+      list.innerHTML = friends.map(f => `
+        <div class="friend-card">
+          <div class="friend-info">
+            <input type="checkbox" class="friend-checkbox" ${f.enabled !== false ? 'checked' : ''} onchange="toggleFriend('${f.uid}', this.checked)">
+            <span class="friend-name">${escapeHtml(f.name)}</span>
+            <span class="badge badge-info">${f.type === 'friend' ? '好友' : f.type === 'mem' ? '帮友' : '侠侣'}</span>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteFriend('${f.uid}')">删除</button>
+        </div>
+      `).join('');
+    }
+    
+    async function scanFriends() {
+      const btn = event.target;
+      btn.innerHTML = '扫描中...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/scan-xia-friends', { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          alert('扫描失败：' + data.error);
+        } else {
+          friends = data.friends;
+          renderFriends();
+          alert(`扫描完成，共 ${data.count} 人`);
+          loadStats();
+        }
+      } catch (e) {
+        alert('扫描失败：' + e.message);
+      }
+      btn.innerHTML = '扫描侠友';
+      btn.disabled = false;
+    }
+    
+    async function toggleFriend(uid, enabled) {
+      const f = friends.find(f => f.uid === uid);
+      if (f) {
+        f.enabled = enabled;
+        await fetch('/api/xia-friends', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ friends })
+        });
+      }
+    }
+    
+    async function deleteFriend(uid) {
+      friends = friends.filter(f => f.uid !== uid);
+      await fetch('/api/xia-friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friends })
+      });
+      renderFriends();
+      loadStats();
+    }
+    
+    async function clearFriends() {
+      if (!confirm('确定清空所有侠友？')) return;
+      friends = [];
+      await fetch('/api/xia-friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friends })
+      });
+      renderFriends();
+      loadStats();
+    }
+    
+    async function loadLogs() {
+      try {
+        const date = document.getElementById('logDate').value;
+        const res = await fetch(`/api/logs?date=${date}`);
+        const logs = await res.json();
+        const table = document.getElementById('logsTable');
+        if (logs.length === 0) {
+          table.innerHTML = '<p style="color:#8c8c8c;padding:20px;text-align:center;">暂无日志</p>';
+          return;
+        }
+        table.innerHTML = `<table>
+          <thead><tr><th>时间</th><th>模块</th><th>状态</th><th>结果</th></tr></thead>
+          <tbody>${logs.map(l => `
+            <tr>
+              <td>${new Date(l.created_at).toLocaleString('zh-CN')}</td>
+              <td>${escapeHtml(l.module_name)}</td>
+              <td><span class="badge ${l.status === 'success' ? 'badge-success' : 'badge-error'}">${l.status === 'success' ? '成功' : '失败'}</span></td>
+              <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(l.result || '').substring(0, 100)}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+      } catch (e) {}
+    }
+    
+    async function clearLogs() {
+      if (!confirm('确定清空所有日志？')) return;
+      await fetch('/api/logs', { method: 'DELETE' });
+      loadLogs();
+      loadStats();
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    
+    async function loadModules() {
+      try {
+        const res = await fetch('/api/modules');
+        const data = await res.json();
+        const modules = Array.isArray(data) ? data : (data.modules || []);
+        const list = document.getElementById('modulesList');
+        
+        if (modules.length === 0) {
+          list.innerHTML = '<p style="color:#8c8c8c;padding:40px;text-align:center;">暂无模块</p>';
+          return;
+        }
+        
+        const groups = {};
+        modules.forEach(m => {
+          if (!groups[m.category]) groups[m.category] = [];
+          groups[m.category].push(m);
+        });
+        
+        list.innerHTML = Object.entries(groups).map(([category, mods]) => `
+          <div style="margin-bottom:24px;">
+            <h3 style="font-size:16px;color:#595959;margin-bottom:12px;">${escapeHtml(category)}</h3>
+            ${mods.map(m => `
+              <div class="friend-card" style="display:block;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <div>
+                    <strong style="font-size:15px;">${escapeHtml(m.name)}</strong>
+                    <span class="badge badge-info" style="margin-left:8px;">${escapeHtml(m.id)}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                      <input type="checkbox" ${m.auto_enabled ? 'checked' : ''} onchange="toggleModule('${m.id}', 'auto_enabled', this.checked)" style="width:16px;height:16px;cursor:pointer;">
+                      <span style="font-size:14px;">定时</span>
+                    </label>
+                    <input type="time" value="${m.auto_time || ''}" onchange="updateModule('${m.id}', 'auto_time', this.value)" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+                    <button class="btn btn-success btn-sm" onclick="runModule('${m.id}')">执行</button>
+                  </div>
+                </div>
+                <div style="font-size:13px;color:#8c8c8c;line-height:1.8;">${escapeHtml(m.description || '')}</div>
+                ${m.id === 'adventure' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">历练地图（可多选，每个Boss最多挑战3次）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      ${ADVENTURE_MAPS.map(map => `
+                        <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                          <input type="checkbox" value="${map.id}" onchange="toggleAdventureMap(this)" ${(m.extra_data && m.extra_data.mapIds && m.extra_data.mapIds.includes(map.id)) ? 'checked' : ''} style="accent-color:#667eea;">
+                          ${map.name}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                ${m.id === 'zodiac' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">扫荡类型：</div>
+                    <select id="zodiacSweepType" onchange="saveZodiacConfig()" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;margin-bottom:12px;">
+                      ${SWEEP_TYPES.map(s => `<option value="${s.id}" ${(m.extra_data && m.extra_data.sweepType === s.id) ? 'selected' : ''}>${s.name}（${s.desc}）</option>`).join('')}
+                    </select>
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">选择宫殿（单选，一天只能挑战一个）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      ${ZODIAC_LIST.map(z => `
+                        <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                          <input type="radio" name="zodiacScene" value="${z.id}" onchange="saveZodiacConfig()" ${(m.extra_data && m.extra_data.sceneIds && m.extra_data.sceneIds.includes(z.id)) ? 'checked' : ''} style="accent-color:#667eea;">
+                          ${z.name}<span style="color:#8c8c8c;font-size:11px;">(${z.levelRange})</span>
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                ${m.id === 'misty' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">挑战关卡（可多选）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      ${MISTY_STAGES.map(s => `
+                        <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                          <input type="checkbox" value="${s.id}" onchange="toggleMistyStage(this)" ${(m.extra_data && m.extra_data.stageIds && m.extra_data.stageIds.includes(s.id)) ? 'checked' : ''} style="accent-color:#667eea;">
+                          ${s.name}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                ${m.id === 'formation' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;display:flex;align-items:center;gap:12px;">
+                      <span>助阵配置（每个类别可选择多个助阵）：</span>
+                      <button class="btn btn-secondary btn-sm" onclick="scanFormationTypes(event)">扫描助阵</button>
+                    </div>
+                    ${FORMATION_TYPES.map(type => `
+                      <div style="margin-bottom:12px;">
+                        <div style="font-size:13px;color:#8c8c8c;margin-bottom:6px;font-weight:500;">${type.name}：</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                          ${FORMATION_LIST[type.id].map(f => `
+                            <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:12px;">
+                              <input type="checkbox" value="${f.id}" data-type="${type.id}" onchange="toggleFormation(this)" ${(m.extra_data && m.extra_data.formations && m.extra_data.formations.some(config => config.type === type.id && config.ids.includes(f.id))) ? 'checked' : ''} style="accent-color:#667eea;">
+                              ${f.name}
+                            </label>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('modulesList').innerHTML = '<p style="color:#ff4d4f;">加载失败</p>';
+      }
+    }
+    
+    async function scanStore() {
+      const btn = event.target;
+      const typeFilter = document.getElementById('storeTab').value;
+      btn.innerHTML = '扫描中...';
+      btn.disabled = true;
+      storeItems = [];
+      renderStore();
+      
+      try {
+        const url = typeFilter 
+          ? `/api/run/store?type=${typeFilter}`
+          : '/api/run/store';
+        const res = await fetch(url, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          alert('扫描失败：' + data.error);
+        } else {
+          storeItems = data.items || [];
+          storeTabs = data.tabs || [];
+          renderStoreTabs();
+          if (typeFilter) {
+            document.getElementById('storeTab').value = typeFilter;
+          }
+          renderStore();
+          loadStats();
+          alert(`扫描完成，共 ${data.totalCount} 种物品`);
+        }
+      } catch (e) {
+        alert('扫描失败：' + e.message);
+      }
+      btn.innerHTML = '扫描背包';
+      btn.disabled = false;
+    }
+    
+    function renderStoreTabs() {
+      const select = document.getElementById('storeTab');
+      select.innerHTML = '<option value="">全部</option>';
+      storeTabs.forEach(tab => {
+        select.innerHTML += `<option value="${tab.id}">${escapeHtml(tab.name)}</option>`;
+      });
+    }
+    
+    function renderStore() {
+      const list = document.getElementById('storeList');
+      if (storeItems.length === 0) {
+        list.innerHTML = '<p style="color:#8c8c8c;padding:40px;text-align:center;">暂无物品，点击"扫描背包"</p>';
+        return;
+      }
+      
+      list.innerHTML = `<div class="store-grid">${storeItems.map(item => `
+        <div class="store-item" style="${item.isOblation ? 'border-color:#52c41a;background:#f6ffed;' : ''}">
+          <div class="store-item-name">
+            ${escapeHtml(item.name)}
+            ${item.isOblation ? '<span class="badge badge-success" style="font-size:10px;margin-left:4px;">供奉</span>' : ''}
+          </div>
+          <div class="store-item-count">×${escapeHtml(item.count)}</div>
+          <div style="font-size:11px;color:#8c8c8c;margin-bottom:8px;">ID: ${escapeHtml(item.id)}</div>
+          <button class="btn ${item.isOblation ? 'btn-danger' : 'btn-primary'} btn-sm" style="width:100%;" onclick="toggleOblation('${item.id}', '${escapeHtml(item.name)}', ${item.isOblation})">
+            ${item.isOblation ? '取消供奉' : '设为供奉'}
+          </button>
+        </div>
+      `).join('')}</div>`;
+    }
+    
+    function filterByTab() {
+      renderStore();
+    }
+    
+    async function toggleModule(id, field, value) {
+      try {
+        const res = await fetch(`/api/modules/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value ? 1 : 0 })
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('保存失败：' + data.error);
+          loadModules();
+        } else {
+          loadStats();
+        }
+      } catch (e) {
+        alert('保存失败：' + e.message);
+      }
+    }
+    
+    async function updateModule(id, field, value) {
+      try {
+        const res = await fetch(`/api/modules/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value })
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('保存失败：' + data.error);
+          loadModules();
+        }
+      } catch (e) {
+        alert('保存失败：' + e.message);
+      }
+    }
+    
+    async function resetModules() {
+      if (!confirm('确定重置模块列表？这将恢复默认模块配置。')) return;
+      try {
+        const res = await fetch('/api/modules/reset', { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          alert('重置失败：' + data.error);
+        } else {
+          alert('重置成功');
+          loadModules();
+        }
+      } catch (e) {
+        alert('重置失败：' + e.message);
+      }
+    }
+    
+    function toggleAdventureMap(checkbox) {
+      saveAdventureConfig();
+    }
+    
+    function toggleZodiacScene(checkbox) {
+      saveZodiacConfig();
+    }
+    
+    async function saveAdventureConfig() {
+      try {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleAdventureMap(this)"]:checked');
+        const mapIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        const res = await fetch('/api/modules/adventure');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.mapIds = mapIds;
+        
+        await fetch('/api/modules/adventure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
+    async function saveZodiacConfig() {
+      try {
+        const radio = document.querySelector('input[name="zodiacScene"]:checked');
+        const sceneIds = radio ? [parseInt(radio.value)] : [];
+        
+        const sweepTypeSelect = document.getElementById('zodiacSweepType');
+        const sweepType = sweepTypeSelect ? parseInt(sweepTypeSelect.value) : 0;
+        
+        const res = await fetch('/api/modules/zodiac');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.sceneIds = sceneIds;
+        extraData.sweepType = sweepType;
+        
+        await fetch('/api/modules/zodiac', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
+    function toggleMistyStage(checkbox) {
+      saveMistyConfig();
+    }
+    
+    async function saveMistyConfig() {
+      try {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleMistyStage(this)"]:checked');
+        const stageIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        const res = await fetch('/api/modules/misty');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.stageIds = stageIds;
+        
+        await fetch('/api/modules/misty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
+    function toggleFormation(checkbox) {
+      saveFormationConfig();
+    }
+    
+    async function saveFormationConfig() {
+      try {
+        const formations = [];
+        
+        FORMATION_TYPES.forEach(type => {
+          const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-type="${type.id}"]:checked`);
+          const ids = Array.from(checkboxes).map(cb => cb.value);
+          if (ids.length > 0) {
+            formations.push({ type: type.id, ids });
+          }
+        });
+        
+        const res = await fetch('/api/modules/formation');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.formations = formations;
+        
+        await fetch('/api/modules/formation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
+    async function scanFormationTypes(event) {
+      const btn = event.target;
+      btn.innerHTML = '扫描中...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/formation-scan');
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('扫描失败：' + data.error);
+        } else if (data.formations) {
+          Object.assign(FORMATION_LIST, data.formations);
+          alert('扫描完成');
+          loadModules();
+        }
+      } catch (e) {
+        alert('扫描失败：' + e.message);
+      }
+      
+      btn.innerHTML = '扫描助阵';
+      btn.disabled = false;
+    }
+    
+    let allModules = [];
+    let allTaskTypes = [];
+    let todayTasks = [];
+    
+    async function refreshTaskList() {
+      const btn = event.target;
+      btn.innerHTML = '获取中...';
+      btn.disabled = true;
+      
+      try {
+        const [taskListRes, configsRes, modulesRes] = await Promise.all([
+          fetch('/api/task-list'),
+          fetch('/api/task-configs'),
+          fetch('/api/modules')
+        ]);
+        
+        const taskListData = await taskListRes.json();
+        const configs = await configsRes.json();
+        allModules = await modulesRes.json();
+        
+        if (taskListData.error) {
+          alert('获取失败：' + taskListData.error);
+        } else {
+          allTaskTypes = taskListData.allTypes || [];
+          todayTasks = taskListData.todayTasks || [];
+          renderTaskConfigList(configs);
+          alert(`获取成功，今日任务 ${todayTasks.length} 个，累计发现 ${allTaskTypes.length} 种任务`);
+        }
+      } catch (e) {
+        alert('获取失败：' + e.message);
+      }
+      
+      btn.innerHTML = '获取今日任务';
+      btn.disabled = false;
+    }
+    
+    async function loadTaskConfigs() {
+      try {
+        const [typesRes, configsRes, modulesRes] = await Promise.all([
+          fetch('/api/task-types'),
+          fetch('/api/task-configs'),
+          fetch('/api/modules')
+        ]);
+        
+        allTaskTypes = await typesRes.json();
+        allModules = await modulesRes.json();
+        const configs = await configsRes.json();
+        
+        renderTaskConfigList(configs);
+      } catch (e) {
+        document.getElementById('taskConfigList').innerHTML = '<p style="color:#ff4d4f;">加载失败</p>';
+      }
+    }
+    
+    function renderTaskConfigList(configs = []) {
+      const list = document.getElementById('taskConfigList');
+      const configMap = new Map(configs.map(c => [c.task_id, c]));
+      
+      if (allTaskTypes.length === 0) {
+        list.innerHTML = '<p style="color:#8c8c8c;padding:40px;text-align:center;">暂无任务数据，点击"获取今日任务"</p>';
+        return;
+      }
+      
+      list.innerHTML = `<table>
+        <thead><tr><th>任务名称</th><th>任务ID</th><th>处理方式</th><th>执行模块</th><th>操作</th></tr></thead>
+        <tbody>${allTaskTypes.map(task => {
+          const config = configMap.get(task.id) || {};
+          const actionType = config.action_type || 'replace';
+          const actionModule = config.action_module || '';
+          const isToday = todayTasks.some(t => t.id === task.id);
+          
+          return `<tr style="${isToday ? 'background:#f6ffed;' : ''}">
+            <td>
+              ${escapeHtml(task.name)}
+              ${isToday ? '<span class="badge badge-success" style="margin-left:8px;">今日</span>' : ''}
+            </td>
+            <td><code>${escapeHtml(task.id)}</code></td>
+            <td>
+              <select id="actionType_${task.id}" onchange="onActionTypeChange('${task.id}')" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;">
+                <option value="replace" ${actionType === 'replace' ? 'selected' : ''}>替换任务</option>
+                <option value="module" ${actionType === 'module' ? 'selected' : ''}>执行模块</option>
+                <option value="skip" ${actionType === 'skip' ? 'selected' : ''}>跳过</option>
+              </select>
+            </td>
+            <td>
+              <select id="actionModule_${task.id}" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;${actionType !== 'module' ? 'display:none;' : ''}">
+                <option value="">选择模块</option>
+                ${allModules.map(m => `<option value="${m.id}" ${actionModule === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="saveTaskConfig('${task.id}')">保存</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+    
+    function onActionTypeChange(taskId) {
+      const actionType = document.getElementById(`actionType_${taskId}`).value;
+      const moduleSelect = document.getElementById(`actionModule_${taskId}`);
+      moduleSelect.style.display = actionType === 'module' ? '' : 'none';
+    }
+    
+    async function saveTaskConfig(taskId) {
+      const actionType = document.getElementById(`actionType_${taskId}`).value;
+      const actionModule = document.getElementById(`actionModule_${taskId}`).value;
+      
+      try {
+        const res = await fetch(`/api/task-configs/${taskId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actionType, actionModule })
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('保存失败：' + data.error);
+        } else {
+          alert('保存成功');
+        }
+      } catch (e) {
+        alert('保存失败：' + e.message);
+      }
+    }
+    
+    async function runDailyTasks() {
+      const btn = event.target;
+      btn.innerHTML = '执行中...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/run/task', { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          let msg = data.result || '';
+          if (data.tasks) {
+            msg = data.tasks.map(t => {
+              if (t.status === 'completed') return `${t.name}: ✅ 完成`;
+              if (t.status === 'replaced') return `${t.name}: 🔄 已替换`;
+              if (t.status === 'skipped') return `${t.name}: ⏭️ 跳过`;
+              return `${t.name}: ❌ ${t.message || '失败'}`;
+            }).join('\n');
+          }
+          alert('执行完成\n' + msg);
+          loadStats();
+          loadLogs();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+      
+      btn.innerHTML = '执行日常任务';
+      btn.disabled = false;
+    }
+    
+    async function toggleOblation(itemId, itemName, isOblation) {
+      try {
+        if (isOblation) {
+          const res = await fetch('/api/run/store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'removeOblation', itemIds: [itemId] })
+          });
+          const data = await res.json();
+          alert(`已移除供奉: ${itemName}`);
+        } else {
+          const res = await fetch('/api/run/store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'setOblation', itemIds: [itemId] })
+          });
+          const data = await res.json();
+          alert(`已设为供奉: ${itemName}`);
+        }
+        scanStore();
+      } catch (e) {
+        alert('操作失败：' + e.message);
+      }
+    }
+    
+    async function viewOblationConfig() {
+      try {
+        const res = await fetch('/api/run/store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'setOblation' })
+        });
+        const data = await res.json();
+        if (data.oblationItems && data.oblationItems.length > 0) {
+          const names = storeItems.filter(i => data.oblationItems.includes(i.id)).map(i => i.name);
+          alert('当前供奉配置：\n' + (names.length > 0 ? names.join('\n') : data.oblationItems.join(', ')));
+        } else {
+          alert('暂无供奉配置');
+        }
+      } catch (e) {
+        alert('获取失败：' + e.message);
+      }
+    }
+    
+    async function clearOblationConfig() {
+      if (!confirm('确定清空供奉配置？')) return;
+      try {
+        const res = await fetch('/api/run/store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clearOblation' })
+        });
+        alert('已清空供奉配置');
+        scanStore();
+      } catch (e) {
+        alert('清空失败：' + e.message);
+      }
+    }
+
+    async function runFaction(actionType) {
+      const btn = event.target;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 执行中...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/run/faction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: actionType })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          let msg = data.result || '';
+          if (actionType === 'all' && data.oblation && data.tasks) {
+            msg = `供奉：${data.oblation.message || ''}\n帮派任务：${data.tasks.result || ''}`;
+            if (data.tasks.tasks && data.tasks.tasks.length > 0) {
+              msg += '\n' + data.tasks.tasks.map(t => `  ${t.name}: ${t.result}`).join('\n');
+            }
+          } else if (data.tasks && data.tasks.length > 0) {
+            msg = data.tasks.map(t => `${t.name}: ${t.result}`).join('\n');
+          }
+          alert('执行成功\n' + msg);
+          loadStats();
+          loadLogs();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+
+    async function runFactionOblate() {
+      const btn = event.target;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 执行中...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/run/faction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'oblate' })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          alert('执行成功\n' + (data.result || data.message || '供奉完成'));
+          loadStats();
+          loadLogs();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+
+    async function runFactionTasks() {
+      const btn = event.target;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 执行中...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/run/faction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'tasks' })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          let msg = data.result || '';
+          if (data.tasks && data.tasks.length > 0) {
+            msg = data.tasks.map(t => `${t.name}: ${t.result}`).join('\n');
+          }
+          alert('执行成功\n' + msg);
+          loadStats();
+          loadLogs();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+    
+    let knightMissions = [];
+    let knightAllTypes = [];
+    
+    async function refreshKnightMissions() {
+      const btn = event.target;
+      btn.innerHTML = '获取中...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/knight-mission-list');
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('获取失败：' + data.error);
+        } else {
+          knightMissions = data.todayMissions || [];
+          knightAllTypes = data.allTypes || [];
+          renderKnightMissionList(data.configs || []);
+          
+          const statusDiv = document.getElementById('knightMissionStatus');
+          statusDiv.style.display = 'block';
+          document.getElementById('knightAcceptedStatus').textContent = `今日任务：${data.accepted.current}/${data.accepted.max}`;
+          document.getElementById('knightRefreshStatus').textContent = `免费刷新：${data.refreshCount.current}次`;
+          
+          const newMissions = knightMissions.filter(m => {
+            const config = (data.configs || []).find(c => c.mission_name === m.name);
+            return !config;
+          });
+          
+          if (newMissions.length > 0) {
+            alert(`获取成功，今日 ${knightMissions.length} 个任务\n其中 ${newMissions.length} 个为新发现任务，请配置是否接受`);
+          } else {
+            alert(`获取成功，今日 ${knightMissions.length} 个任务`);
+          }
+        }
+      } catch (e) {
+        alert('获取失败：' + e.message);
+      }
+      
+      btn.innerHTML = '获取今日任务';
+      btn.disabled = false;
+    }
+    
+    async function loadKnightMissionConfigs() {
+      try {
+        const [typesRes, configsRes] = await Promise.all([
+          fetch('/api/knight-mission-types'),
+          fetch('/api/knight-mission-configs')
+        ]);
+        
+        knightAllTypes = await typesRes.json();
+        const configs = await configsRes.json();
+        
+        renderKnightMissionList(configs);
+      } catch (e) {
+        document.getElementById('knightMissionList').innerHTML = '<p style="color:#ff4d4f;">加载失败</p>';
+      }
+    }
+    
+    function renderKnightMissionList(configs = []) {
+      const list = document.getElementById('knightMissionList');
+      const configMap = new Map(configs.map(c => [c.mission_name, c]));
+      
+      if (knightAllTypes.length === 0) {
+        list.innerHTML = '<p style="color:#8c8c8c;padding:40px;text-align:center;">暂无任务数据，点击"获取今日任务"发现任务</p>';
+        return;
+      }
+      
+      const todayNames = knightMissions.map(m => m.name);
+      const isNew = (name) => !configMap.has(name);
+      const newInToday = knightMissions.filter(m => isNew(m.name));
+      
+      list.innerHTML = `
+        ${newInToday.length > 0 ? `<div style="margin-bottom:16px;padding:12px;background:#fff7e6;border-radius:8px;border-left:4px solid #fa8c16;">
+          <strong style="color:#fa8c16;">发现 ${newInToday.length} 个新任务：</strong>
+          ${newInToday.map(m => m.name).join('、')}
+          <br><span style="color:#8c8c8c;font-size:12px;">请勾选"接受"列配置是否接受这些任务</span>
+        </div>` : ''}
+        <table>
+          <thead><tr><th>任务名称</th><th>任务奖励</th><th>时长</th><th>状态</th><th>接受</th></tr></thead>
+          <tbody>${knightAllTypes.map(mission => {
+            const config = configMap.get(mission.name) || {};
+            const enabled = config.enabled === 1;
+            const isToday = todayNames.includes(mission.name);
+            const isNewMission = isNew(mission.name);
+            
+            let statusBadge = '';
+            if (isNewMission) {
+              statusBadge = '<span class="badge" style="background:#fff7e6;color:#fa8c16;">新发现</span>';
+            } else if (isToday) {
+              statusBadge = '<span class="badge badge-success">今日</span>';
+            } else if (enabled) {
+              statusBadge = '<span class="badge badge-info">已配置</span>';
+            } else {
+              statusBadge = '<span class="badge" style="background:#f5f5f5;color:#8c8c8c;">不接</span>';
+            }
+            
+            return `<tr style="${isNewMission ? 'background:#fffbe6;' : isToday ? 'background:#f6ffed;' : ''}">
+              <td>${escapeHtml(mission.name)}</td>
+              <td style="color:#667eea;">${escapeHtml(mission.reward || '-')}</td>
+              <td>${mission.duration ? mission.duration + '小时' : '-'}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleKnightMission('${escapeHtml(mission.name)}', this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#667eea;">
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+    }
+    
+    async function toggleKnightMission(name, enabled) {
+      try {
+        await fetch(`/api/knight-mission-configs/${encodeURIComponent(name)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+      } catch (e) {
+        console.error('保存失败:', e);
+      }
+    }
+    
+    async function runKnightMissions() {
+      const btn = event.target;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 执行中...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/run/knightisland', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ op: 'automission' })
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('执行失败：' + data.error);
+        } else {
+          let msg = data.result || '';
+          if (data.acceptedCount !== undefined) {
+            msg = `成功接取 ${data.acceptedCount} 个任务\n\n` + msg;
+          }
+          alert('执行完成\n' + msg);
+          loadStats();
+          loadLogs();
+          refreshKnightMissions();
+        }
+      } catch (e) {
+        alert('执行失败：' + e.message);
+      }
+      
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
