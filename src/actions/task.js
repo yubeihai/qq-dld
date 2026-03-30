@@ -366,66 +366,77 @@ let { tasks } = await this.getTaskList();
       if (task.status === 'pending') {
         this.log(`[${task.name}] 任务未完成，处理中...`, 'info');
 
-        if (!config.actionModule) {
-          const matchedModule = this.matchModuleByTaskName(task.name);
-          if (matchedModule) {
-            config = {
-              ...config,
-              actionModule: matchedModule,
-              autoMatched: true,
-            };
-          }
+        if (config.actionType === 'skip') {
+          this.log(`[${task.name}] 配置为跳过`, 'info');
+          task.status = 'skipped';
+          task.message = '已跳过';
+          skipped++;
+          results.push(task);
+          if (i < tasks.length - 1) await this.sleep(interval);
+          continue;
         }
 
-        if (!config.actionModule && task.canReplace && replaced < MAX_GLOBAL_REPLACES) {
-          this.log(`[${task.name}] 无法执行，尝试替换任务...`, 'info');
-          const replaceResult = await this.replaceTask(task.id);
-          
-          if (replaceResult.success) {
-            replaced++;
-            task.replaced = true;
-            task.replaceCount = 1;
-            await this.sleep(interval);
+        if (config.actionType === 'replace') {
+          if (task.canReplace && replaced < MAX_GLOBAL_REPLACES) {
+            this.log(`[${task.name}] 配置为替换，替换任务...`, 'info');
+            const replaceResult = await this.replaceTask(task.id);
             
-            const newTaskList = await this.getTaskList();
-            const newTask = newTaskList.tasks.find(t => t.id === task.id);
-            if (newTask) {
-              task.name = newTask.name;
-              task.status = newTask.status;
-              task.canReplace = newTask.canReplace;
-            }
-            
-            config = this.getTaskConfig(task.id, task.name);
-            if (!config.actionModule) {
-              const matchedModule = this.matchModuleByTaskName(task.name);
-              if (matchedModule) {
-                config = {
-                  ...config,
-                  actionModule: matchedModule,
-                  autoMatched: true,
-                };
+            if (replaceResult.success) {
+              replaced++;
+              task.replaced = true;
+              task.replaceCount = 1;
+              await this.sleep(interval);
+              
+              const newTaskList = await this.getTaskList();
+              const newTask = newTaskList.tasks.find(t => t.id === task.id);
+              if (newTask) {
+                task.name = newTask.name;
+                task.status = newTask.status;
+                task.canReplace = newTask.canReplace;
               }
-            }
-            
-            if (task.status === 'can_claim') {
-              this.log(`[${task.name}] 替换后任务已完成，领取奖励...`, 'info');
-              const claimResult = await this.claimTaskReward(task.id);
-              if (claimResult.success) {
-                task.status = 'done';
-                task.message = claimResult.message || '已领取奖励';
-                completed++;
-              } else {
-                task.status = 'failed';
-                task.message = `领取失败: ${claimResult.message}`;
-                failed++;
+              
+              if (task.status === 'can_claim') {
+                this.log(`[${task.name}] 替换后任务已完成，领取奖励...`, 'info');
+                const claimResult = await this.claimTaskReward(task.id);
+                if (claimResult.success) {
+                  task.status = 'done';
+                  task.message = claimResult.message || '已领取奖励';
+                  completed++;
+                } else {
+                  task.status = 'failed';
+                  task.message = `领取失败: ${claimResult.message}`;
+                  failed++;
+                }
+                results.push(task);
+                if (i < tasks.length - 1) await this.sleep(interval);
+                continue;
               }
+              
+              config = this.getTaskConfig(task.id, task.name);
+              if (config.actionType === 'replace') {
+                task.status = 'pending';
+                task.message = '替换后仍为替换任务';
+                results.push(task);
+                continue;
+              }
+            } else {
+              task.status = 'failed';
+              task.message = `替换失败: ${replaceResult.message}`;
+              failed++;
               results.push(task);
               if (i < tasks.length - 1) await this.sleep(interval);
               continue;
             }
+          } else if (!task.canReplace) {
+            task.status = 'failed';
+            task.message = '任务无法替换';
+            failed++;
+            results.push(task);
+            if (i < tasks.length - 1) await this.sleep(interval);
+            continue;
           } else {
             task.status = 'failed';
-            task.message = `替换失败: ${replaceResult.message}`;
+            task.message = '替换次数已用完';
             failed++;
             results.push(task);
             if (i < tasks.length - 1) await this.sleep(interval);
@@ -434,13 +445,74 @@ let { tasks } = await this.getTaskList();
         }
 
         if (!config.actionModule) {
-          task.status = 'failed';
-          task.message = config.actionType === 'skip' ? '已跳过' : '无匹配模块';
-          if (config.actionType === 'skip') {
-            skipped++;
-          } else {
-            failed++;
+          const matchedModule = this.matchModuleByTaskName(task.name);
+          if (matchedModule) {
+            config = {
+              ...config,
+              actionModule: matchedModule,
+              autoMatched: true,
+            };
+          } else if (task.canReplace && replaced < MAX_GLOBAL_REPLACES) {
+            this.log(`[${task.name}] 无匹配模块，尝试替换任务...`, 'info');
+            const replaceResult = await this.replaceTask(task.id);
+            
+            if (replaceResult.success) {
+              replaced++;
+              task.replaced = true;
+              task.replaceCount = 1;
+              await this.sleep(interval);
+              
+              const newTaskList = await this.getTaskList();
+              const newTask = newTaskList.tasks.find(t => t.id === task.id);
+              if (newTask) {
+                task.name = newTask.name;
+                task.status = newTask.status;
+                task.canReplace = newTask.canReplace;
+              }
+              
+              if (task.status === 'can_claim') {
+                this.log(`[${task.name}] 替换后任务已完成，领取奖励...`, 'info');
+                const claimResult = await this.claimTaskReward(task.id);
+                if (claimResult.success) {
+                  task.status = 'done';
+                  task.message = claimResult.message || '已领取奖励';
+                  completed++;
+                } else {
+                  task.status = 'failed';
+                  task.message = `领取失败: ${claimResult.message}`;
+                  failed++;
+                }
+                results.push(task);
+                if (i < tasks.length - 1) await this.sleep(interval);
+                continue;
+              }
+              
+              config = this.getTaskConfig(task.id, task.name);
+              if (!config.actionModule) {
+                const newMatchedModule = this.matchModuleByTaskName(task.name);
+                if (newMatchedModule) {
+                  config = {
+                    ...config,
+                    actionModule: newMatchedModule,
+                    autoMatched: true,
+                  };
+                }
+              }
+            } else {
+              task.status = 'failed';
+              task.message = `替换失败: ${replaceResult.message}`;
+              failed++;
+              results.push(task);
+              if (i < tasks.length - 1) await this.sleep(interval);
+              continue;
+            }
           }
+        }
+
+        if (!config.actionModule) {
+          task.status = 'failed';
+          task.message = '无匹配模块';
+          failed++;
           results.push(task);
           if (i < tasks.length - 1) await this.sleep(interval);
           continue;

@@ -13,9 +13,9 @@ class CargoAction extends ActionBase {
   ESCORT_PRIORITY = ['温良恭', '吕青橙', '蔡八斗'];
 
   ESCORT_TIME = {
-    '温良恭': 200,
-    '吕青橙': 150,
-    '蔡八斗': 90,
+    '温良恭': 360,
+    '吕青橙': 360,
+    '蔡八斗': 360,
   };
 
   extractCargoInfo(html) {
@@ -136,18 +136,24 @@ class CargoAction extends ActionBase {
       return { success: false, message: '登录已过期', hasComplete: false, hasReward: false, html: '' };
     }
 
-    const hasComplete = html.includes('护送完成');
-    const hasReward = html.includes('op=15') || html.includes('领取奖励');
+    // 检测是否有"护送完成"链接 (op=15)
+    const hasEscortCompleteLink = html.includes('op=15') && html.includes('护送完成');
     
-    // 增强检测：检查是否有明显的奖励提示信息
-    const hasRewardText = html.includes('恭喜') || html.includes('获得') || html.includes('奖励');
+    // 检测剩余时间是否为 0
+    const remainingTimeMatch = html.match(/剩余时间：(\d+) 分 (\d+) 秒/);
+    const isTimeZero = remainingTimeMatch && 
+                       parseInt(remainingTimeMatch[1]) === 0 && 
+                       parseInt(remainingTimeMatch[2]) === 0;
+    
+    // 综合判断：有护送完成按钮 或 时间为 0
+    const hasComplete = hasEscortCompleteLink || isTimeZero;
     
     return { 
       success: true, 
       hasComplete, 
-      hasReward: hasReward || hasRewardText, 
-      html: hasComplete || hasReward ? html.substring(0, 500) : '',
-      rawHtml: hasComplete || hasReward ? html : '',
+      hasReward: hasComplete, 
+      html: hasComplete ? html : '',
+      rawHtml: hasComplete ? html : '',
     };
   }
 
@@ -162,38 +168,61 @@ class CargoAction extends ActionBase {
       return { success: false, message: '登录已过期', reward: '', needCollect: false };
     }
 
-    // 奖励已领取，进入选择镖师页面
-    if (html.includes('选择镖师') || html.includes('当前镖师')) {
-      const rewardMatch = html.match(/护送奖励：([^<\n]+)/);
-      const hasStartButton = html.includes('op=6');
-      const noCount = html.includes('没有护送次数');
+    // 情况 1：返回镖车列表页面（说明 op=15 已直接完成领取）
+    // 特征：同时有"镖车列表"和"剩余拦截次数"
+    if (html.includes('镖车列表') && html.includes('剩余拦截次数')) {
+      const rewardMatch = html.match(/获得[^<\n]*?奖励：[^<\n]+/) || 
+                          html.match(/获得[^<\n]+威望[^<\n]+/) ||
+                          html.match(/获得[^<\n]+经验[^<\n]+/);
       return { 
         success: true, 
-        message: rewardMatch ? `奖励已领取：${rewardMatch[1]}` : '护送完成，进入下一轮',
+        message: rewardMatch ? rewardMatch[0] : '奖励已领取成功',
+        reward: rewardMatch ? rewardMatch[0] : '',
+        needCollect: false,
+        hasNextRound: !html.includes('剩余护送次数：0') && !html.includes('没有护送次数'),
+      };
+    }
+
+    // 情况 2：选择镖师页面（奖励已领取，进入下一轮）
+    // 注意：要排除领取界面的"当前镖师"
+    if ((html.includes('选择镖师') || html.includes('当前镖师')) && !html.includes('op=16') && !html.includes('领取奖励')) {
+      const rewardMatch = html.match(/护送奖励：([^<\n]+)/);
+      const hasStartButton = html.includes('op=6');
+      const noCount = html.includes('没有护送次数') || html.includes('剩余护送次数：0');
+      return { 
+        success: true, 
+        message: rewardMatch ? `奖励已领取：${rewardMatch[1]}` : '护送完成，可以开始下一轮',
         reward: rewardMatch ? rewardMatch[1] : '',
         needCollect: false,
         hasNextRound: hasStartButton && !noCount,
       };
     }
 
-    const rewardMatch = html.match(/获得奖励：[^<\n！]+/);
-    const hasCollectButton = html.includes('领取奖励') || html.includes('op=16');
-    
-    if (rewardMatch || html.includes('领取成功') || html.includes('恭喜') || html.includes('护送完成')) {
+    // 情况 3：奖励领取界面（需要点击 op=16 确认领取）
+    // 特征：有 op=16 按钮或"领取奖励"文字
+    if (html.includes('op=16') || html.includes('领取奖励')) {
       return { 
         success: true, 
-        message: rewardMatch ? rewardMatch[0] : '护送完成，待领取',
-        reward: rewardMatch ? rewardMatch[0] : '',
-        needCollect: hasCollectButton,
+        message: '进入奖励领取界面，待确认',
+        reward: '',
+        needCollect: true,
       };
     }
 
-    if (html.includes('次数不足') || html.includes('没有次数')) {
-      return { success: false, message: '护送次数不足', reward: '', needCollect: false };
+    // 情况 4：已领取成功提示
+    if (html.includes('领取成功') || html.includes('恭喜获得')) {
+      const rewardMatch = html.match(/获得[^<\n]+/);
+      return { 
+        success: true, 
+        message: rewardMatch ? rewardMatch[0] : '领取成功',
+        reward: rewardMatch ? rewardMatch[0] : '',
+        needCollect: false,
+      };
     }
 
-    const text = this.extractText(html).substring(0, 100);
-    return { success: false, message: `未知结果：${text}`, reward: '', needCollect: false };
+    // 情况 5：未知页面，保守处理，尝试发送 op=16
+    // 这样可以确保不会错过奖励
+    return { success: true, message: '护送完成，待领取', reward: '', needCollect: true };
   }
 
   async confirmCollectReward() {

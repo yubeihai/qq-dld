@@ -1,5 +1,6 @@
 const { action: dailyGift } = require('./daily-gift');
 const { action: friendFight } = require('./friend-fight');
+const { action: friendInfo } = require('./friend-info');
 const { action: store } = require('./store');
 const { action: wulin } = require('./wulin');
 const { action: tenLottery } = require('./ten-lottery');
@@ -20,10 +21,19 @@ const { action: sect } = require('./sect');
 const { action: dragonPhoenix } = require('./dragon-phoenix');
 const { action: knightIsland } = require('./knight-island');
 const { action: abyssTide } = require('./abyss-tide');
+const { action: peakFight } = require('./peak-fight');
+const { action: livenessGift } = require('./liveness-gift');
+const { action: enchant } = require('./enchant');
+const { action: ascendHeaven } = require('./ascend-heaven');
+const { action: immortals } = require('./immortals');
+const { action: wish } = require('./wish');
+const { action: altar } = require('./altar');
+const { action: missionAssign } = require('./mission-assign');
 
 const actions = new Map([
   ['dailygift', dailyGift],
   ['friendfight', friendFight],
+  ['friendinfo', friendInfo],
   ['store', store],
   ['wulin', wulin],
   ['tenlottery', tenLottery],
@@ -44,6 +54,14 @@ const actions = new Map([
   ['dragonphoenix', dragonPhoenix],
   ['knightisland', knightIsland],
   ['abysstide', abyssTide],
+  ['peakfight', peakFight],
+  ['livenessgift', livenessGift],
+  ['enchant', enchant],
+  ['ascendheaven', ascendHeaven],
+  ['immortals', immortals],
+  ['wish', wish],
+  ['altar', altar],
+  ['missionassign', missionAssign],
 ]);
 
 function getAction(id) {
@@ -65,4 +83,7 @@ module.exports = {
   getAllActions,
   dailyGift,
   friendFight,
+  friendInfo,
+  wish,
+  missionAssign,
 };

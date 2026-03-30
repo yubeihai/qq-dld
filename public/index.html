@@ -359,6 +359,17 @@
       { id: 4, name: '黄帝内经' },
     ];
     
+    const ABYSS_DUNGEONS = [
+      { id: 1, name: '崎岖斗界' },
+      { id: 2, name: '魂渡桥' },
+      { id: 3, name: '须臾之河' },
+      { id: 4, name: '曲镜空洞' },
+      { id: 5, name: '光影迷界' },
+      { id: 6, name: '吞厄源头' },
+      { id: 7, name: '渊秘祭坛' },
+      { id: 8, name: '古帝遗迹' },
+    ];
+    
     const FORMATION_LIST = {
       1: [
         { id: '1', name: '毒光剑影' },
@@ -583,6 +594,13 @@
           }
         }
         
+        if (id === 'ascendheaven') {
+          const res = await fetch('/api/modules/ascendheaven');
+          const moduleData = await res.json();
+          params.mode = moduleData.extra_data && moduleData.extra_data.mode ? moduleData.extra_data.mode : 2;
+          params.skillCount = moduleData.extra_data && moduleData.extra_data.skillCount ? moduleData.extra_data.skillCount : 0;
+        }
+        
         const res = await fetch(`/api/run/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -775,7 +793,11 @@
                       <input type="checkbox" ${m.auto_enabled ? 'checked' : ''} onchange="toggleModule('${m.id}', 'auto_enabled', this.checked)" style="width:16px;height:16px;cursor:pointer;">
                       <span style="font-size:14px;">定时</span>
                     </label>
-                    <input type="time" value="${m.auto_time || ''}" onchange="updateModule('${m.id}', 'auto_time', this.value)" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+                    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;" id="times_${m.id}">
+                      ${renderTimeTags(m.id, m.auto_time)}
+                    </div>
+                    <input type="time" id="newTime_${m.id}" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;width:100px;">
+                    <button class="btn btn-secondary btn-sm" onclick="addModuleTime('${m.id}')">添加</button>
                     <button class="btn btn-success btn-sm" onclick="runModule('${m.id}')">执行</button>
                   </div>
                 </div>
@@ -842,6 +864,51 @@
                         </div>
                       </div>
                     `).join('')}
+                  </div>
+                ` : ''}
+                ${m.id === 'abysstide' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">深渊秘境副本（单选，每天免费2次+可兑换2次）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                      ${ABYSS_DUNGEONS.map(d => `
+                        <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                          <input type="radio" name="abyssDungeon" value="${d.id}" onchange="saveAbyssTideConfig()" ${(m.extra_data && m.extra_data.dungeonId === d.id) ? 'checked' : ''} style="accent-color:#667eea;">
+                          ${d.name}
+                        </label>
+                      `).join('')}
+                    </div>
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">
+                      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="abyssAutoExchange" onchange="saveAbyssTideConfig()" ${(m.extra_data && m.extra_data.autoExchange) ? 'checked' : ''} style="accent-color:#667eea;width:16px;height:16px;">
+                        <span>自动兑换次数（消耗黄金卷轴*5+斗神符*1，最多兑换2次）</span>
+                      </label>
+                    </div>
+                  </div>
+                ` : ''}
+                ${m.id === 'ascendheaven' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">报名模式（单选）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="ascendHeavenMode" value="1" onchange="saveAscendHeavenConfig()" ${(m.extra_data && m.extra_data.mode === 1) ? 'checked' : ''} style="accent-color:#667eea;">
+                        单排模式<span style="color:#fa8c16;font-size:11px;">(需材料)</span>
+                      </label>
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="ascendHeavenMode" value="2" onchange="saveAscendHeavenConfig()" ${(m.extra_data && m.extra_data.mode === 2) || (!m.extra_data || m.extra_data.mode === undefined) ? 'checked' : ''} style="accent-color:#667eea;">
+                        匹配模式<span style="color:#52c41a;font-size:11px;">(无限制)</span>
+                      </label>
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="ascendHeavenMode" value="3" onchange="saveAscendHeavenConfig()" ${(m.extra_data && m.extra_data.mode === 3) ? 'checked' : ''} style="accent-color:#667eea;">
+                        双排模式<span style="color:#1890ff;font-size:11px;">(需邀请好友)</span>
+                      </label>
+                    </div>
+                    <div id="ascendHeavenSkillConfig" style="margin-top:12px;font-size:14px;color:#595959;${(m.extra_data && m.extra_data.mode === 1) ? '' : 'display:none;'}">
+                      <label style="display:flex;align-items:center;gap:8px;">
+                        <span>激活天赋次数：</span>
+                        <input type="number" id="ascendHeavenSkillCount" min="0" max="10" value="${(m.extra_data && m.extra_data.skillCount) || 0}" onchange="saveAscendHeavenConfig()" style="width:60px;padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+                        <span style="font-size:12px;color:#8c8c8c;">(消耗黄金卷轴，成功率70%/50%/10%)</span>
+                      </label>
+                    </div>
                   </div>
                 ` : ''}
               </div>
@@ -919,6 +986,72 @@
     
     function filterByTab() {
       renderStore();
+    }
+    
+    function renderTimeTags(moduleId, timeStr) {
+      if (!timeStr) return '';
+      const times = timeStr.split(',').map(t => t.trim()).filter(t => t);
+      if (times.length === 0) return '<span style="color:#8c8c8c;font-size:12px;">未设置</span>';
+      return times.map(t => `
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#667eea;color:white;border-radius:4px;font-size:12px;">
+          ${t}
+          <span style="cursor:pointer;" onclick="removeModuleTime('${moduleId}', '${t}')">&times;</span>
+        </span>
+      `).join('');
+    }
+    
+    async function addModuleTime(moduleId) {
+      const input = document.getElementById(`newTime_${moduleId}`);
+      const newTime = input.value;
+      if (!newTime) {
+        alert('请选择时间');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`/api/modules/${moduleId}`);
+        const data = await res.json();
+        const currentTime = data.auto_time || '';
+        const times = currentTime.split(',').map(t => t.trim()).filter(t => t);
+        
+        if (times.includes(newTime)) {
+          alert('该时间已存在');
+          return;
+        }
+        
+        times.push(newTime);
+        times.sort();
+        
+        await fetch(`/api/modules/${moduleId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auto_time: times.join(',') })
+        });
+        
+        input.value = '';
+        loadModules();
+      } catch (e) {
+        alert('添加失败：' + e.message);
+      }
+    }
+    
+    async function removeModuleTime(moduleId, time) {
+      try {
+        const res = await fetch(`/api/modules/${moduleId}`);
+        const data = await res.json();
+        const currentTime = data.auto_time || '';
+        const times = currentTime.split(',').map(t => t.trim()).filter(t => t && t !== time);
+        
+        await fetch(`/api/modules/${moduleId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auto_time: times.join(',') })
+        });
+        
+        loadModules();
+      } catch (e) {
+        alert('删除失败：' + e.message);
+      }
     }
     
     async function toggleModule(id, field, value) {
@@ -1029,6 +1162,35 @@
       saveMistyConfig();
     }
     
+    async function saveAscendHeavenConfig() {
+      try {
+        const radio = document.querySelector('input[name="ascendHeavenMode"]:checked');
+        const mode = radio ? parseInt(radio.value) : 2;
+        
+        const skillConfigDiv = document.getElementById('ascendHeavenSkillConfig');
+        if (skillConfigDiv) {
+          skillConfigDiv.style.display = mode === 1 ? '' : 'none';
+        }
+        
+        const skillCountInput = document.getElementById('ascendHeavenSkillCount');
+        const skillCount = skillCountInput ? parseInt(skillCountInput.value) || 0 : 0;
+        
+        const res = await fetch('/api/modules/ascendheaven');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.mode = mode;
+        extraData.skillCount = skillCount;
+        
+        await fetch('/api/modules/ascendheaven', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
     async function saveMistyConfig() {
       try {
         const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleMistyStage(this)"]:checked');
@@ -1051,6 +1213,29 @@
     
     function toggleFormation(checkbox) {
       saveFormationConfig();
+    }
+    
+    function saveAbyssTideConfig() {
+      const radio = document.querySelector('input[name="abyssDungeon"]:checked');
+      const dungeonId = radio ? parseInt(radio.value) : 1;
+      
+      const autoExchangeCheckbox = document.getElementById('abyssAutoExchange');
+      const autoExchange = autoExchangeCheckbox ? autoExchangeCheckbox.checked : false;
+      
+      fetch('/api/modules/abysstide')
+        .then(res => res.json())
+        .then(data => {
+          const extraData = data.extra_data || {};
+          extraData.dungeonId = dungeonId;
+          extraData.autoExchange = autoExchange;
+          
+          return fetch('/api/modules/abysstide', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+          });
+        })
+        .catch(e => console.error('保存配置失败:', e));
     }
     
     async function saveFormationConfig() {

@@ -9,6 +9,11 @@ function parseTime(timeStr) {
   return { hour, minute };
 }
 
+function parseTimes(timesStr) {
+  if (!timesStr) return [];
+  return timesStr.split(',').map(t => t.trim()).filter(t => t.includes(':'));
+}
+
 function startScheduler() {
   stopScheduler();
   
@@ -21,11 +26,13 @@ function startScheduler() {
   
   const timeGroups = {};
   configs.forEach(config => {
-    if (!config.auto_time) return;
-    if (!timeGroups[config.auto_time]) {
-      timeGroups[config.auto_time] = [];
-    }
-    timeGroups[config.auto_time].push(config);
+    const times = parseTimes(config.auto_time);
+    times.forEach(time => {
+      if (!timeGroups[time]) {
+        timeGroups[time] = [];
+      }
+      timeGroups[time].push(config);
+    });
   });
   
   Object.keys(timeGroups).forEach(time => {
