@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { initDb, execLogs, cookieDb, moduleConfigs, taskTypes, taskConfigs, knightMissionTypes, knightMissionConfigs } = require('../db');
+const { initDb, execLogs, cookieDb, moduleConfigs, taskTypes, taskConfigs, knightMissionTypes, knightMissionConfigs, badgeTypes, badgeConfigs } = require('../db');
 const { getAllActions, getAction } = require('../actions');
 const { startScheduler, restartScheduler } = require('../scheduler');
 const { login } = require('../game/login');
@@ -310,6 +310,162 @@ app.get('/api/knight-mission-list', async (req, res) => {
       refreshCount: missionIndex.refreshCount || { current: 4, max: 4 },
       allTypes,
       configs,
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+// 徽章类型列表
+app.get('/api/badge-types', (req, res) => {
+  const types = badgeTypes.getAll();
+  res.json(types);
+});
+
+// 徽章配置列表
+app.get('/api/badge-configs', (req, res) => {
+  const configs = badgeConfigs.getAll();
+  res.json(configs);
+});
+
+// 批量更新徽章配置
+app.post('/api/badge-configs', (req, res) => {
+  const { configs } = req.body;
+  if (!Array.isArray(configs)) {
+    return res.json({ error: '配置格式错误' });
+  }
+  badgeConfigs.upsertBatch(configs);
+  res.json({ success: true });
+});
+
+// 单个徽章配置
+app.post('/api/badge-configs/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { enabled } = req.body;
+    badgeConfigs.upsert(id, enabled !== false);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 删除徽章配置
+app.delete('/api/badge-configs/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    badgeConfigs.delete(id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 扫描徽章列表并保存
+app.get('/api/badge-list', async (req, res) => {
+  try {
+    const valid = await client.checkLoginStatus();
+    if (!valid) {
+      return res.json({ error: '登录已过期，请重新扫码登录' });
+    }
+    
+    const { action: badgeHall } = require('../actions/badge-hall');
+    
+    // 扫描所有页面的徽章
+    let allBadges = [];
+    let page = 1;
+    let totalPages = 1;
+    
+    do {
+      const result = await badgeHall.run({ action: 'list', page });
+      if (result.success && result.badges) {
+        allBadges = allBadges.concat(result.badges);
+        totalPages = result.totalPages || 1;
+      }
+      page++;
+    } while (page <= totalPages);
+    
+    // 去重
+    const uniqueBadges = [];
+    const seen = new Set();
+    for (const b of allBadges) {
+      if (!seen.has(b.id)) {
+        seen.add(b.id);
+        uniqueBadges.push(b);
+      }
+    }
+    
+    // 保存到数据库
+    if (uniqueBadges.length > 0) {
+      badgeTypes.upsertBatch(uniqueBadges.map(b => ({
+        id: b.id,
+        name: b.name,
+        rank: b.rank,
+        stage: b.stage,
+      })));
+    }
+    
+    const allTypes = badgeTypes.getAll();
+    const configs = badgeConfigs.getAll();
+    
+    res.json({
+      badges: uniqueBadges,
+      achievement: allBadges.length > 0 ? allBadges[0].achievement : 0,
+      badgeCount: uniqueBadges.length,
+      allTypes,
+      configs,
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+// 批量进阶勾选的徽章
+app.post('/api/badge-upgrade-selected', async (req, res) => {
+  try {
+    const valid = await client.checkLoginStatus();
+    if (!valid) {
+      return res.json({ error: '登录已过期，请重新扫码登录' });
+    }
+    
+    const enabledConfigs = badgeConfigs.getEnabled();
+    if (enabledConfigs.length === 0) {
+      return res.json({ error: '请先勾选要进阶的徽章' });
+    }
+    
+    const { action: badgeHall } = require('../actions/badge-hall');
+    const results = [];
+    
+    for (const config of enabledConfigs) {
+      try {
+        const result = await badgeHall.run({ 
+          action: 'doupgrade', 
+          achievementId: config.badge_id,
+          times: 1 
+        });
+        results.push({
+          id: config.badge_id,
+          name: config.name,
+          success: result.success,
+          message: result.result || result.error || '',
+        });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      } catch (e) {
+        results.push({
+          id: config.badge_id,
+          name: config.name,
+          success: false,
+          message: e.message,
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    res.json({
+      success: true,
+      total: results.length,
+      successCount,
+      results,
     });
   } catch (error) {
     res.json({ error: error.message });

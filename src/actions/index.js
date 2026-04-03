@@ -11,6 +11,7 @@ const { action: adventure } = require('./adventure');
 const { action: task } = require('./task');
 const { action: zodiac } = require('./zodiac');
 const { action: cargo } = require('./cargo');
+const { action: manor } = require('./manor');
 const { action: faction } = require('./faction');
 const { action: misty } = require('./misty');
 const { action: formation } = require('./formation');
@@ -29,6 +30,7 @@ const { action: immortals } = require('./immortals');
 const { action: wish } = require('./wish');
 const { action: altar } = require('./altar');
 const { action: missionAssign } = require('./mission-assign');
+const { action: badgeHall } = require('./badge-hall');
 
 const actions = new Map([
   ['dailygift', dailyGift],
@@ -44,6 +46,7 @@ const actions = new Map([
   ['task', task],
   ['zodiac', zodiac],
   ['cargo', cargo],
+  ['manor', manor],
   ['faction', faction],
   ['misty', misty],
   ['formation', formation],
@@ -62,6 +65,7 @@ const actions = new Map([
   ['wish', wish],
   ['altar', altar],
   ['missionassign', missionAssign],
+  ['badgehall', badgeHall],
 ]);
 
 function getAction(id) {

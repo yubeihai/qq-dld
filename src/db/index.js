@@ -82,6 +82,22 @@ function migrateDb() {
       updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
     )
   `); } catch (e) {}
+  try { db.run(`
+    CREATE TABLE IF NOT EXISTS badge_types (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      rank TEXT DEFAULT '',
+      stage INTEGER DEFAULT 0,
+      discovered_at DATETIME DEFAULT (datetime('now', 'localtime'))
+    )
+  `); } catch (e) {}
+  try { db.run(`
+    CREATE TABLE IF NOT EXISTS badge_configs (
+      badge_id TEXT PRIMARY KEY,
+      enabled INTEGER DEFAULT 1,
+      updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
+    )
+  `); } catch (e) {}
   saveDb();
 }
 
@@ -683,6 +699,105 @@ const knightMissionConfigs = {
   },
 };
 
+const badgeTypes = {
+  getAll: () => {
+    const result = db.exec('SELECT * FROM badge_types ORDER BY id');
+    return toObjects(result);
+  },
+  getById: (id) => {
+    const stmt = db.prepare('SELECT * FROM badge_types WHERE id = ?');
+    stmt.bind([id]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  },
+  upsert: (id, name, rank = '', stage = 0) => {
+    db.run(`
+      INSERT INTO badge_types (id, name, rank, stage)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET name = excluded.name, rank = excluded.rank, stage = excluded.stage
+    `, [id, name, rank, stage]);
+    saveDb();
+  },
+  upsertBatch: (badges) => {
+    for (const b of badges) {
+      db.run(`
+        INSERT INTO badge_types (id, name, rank, stage)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET name = excluded.name, rank = excluded.rank, stage = excluded.stage
+      `, [b.id, b.name, b.rank || '', b.stage || 0]);
+    }
+    saveDb();
+  },
+  delete: (id) => {
+    db.run('DELETE FROM badge_types WHERE id = ?', [id]);
+    saveDb();
+  },
+  clear: () => {
+    db.run('DELETE FROM badge_types');
+    saveDb();
+  },
+};
+
+const badgeConfigs = {
+  getAll: () => {
+    const result = db.exec(`
+      SELECT bc.*, bt.name, bt.rank, bt.stage
+      FROM badge_configs bc
+      LEFT JOIN badge_types bt ON bc.badge_id = bt.id
+      ORDER BY bt.name
+    `);
+    return toObjects(result);
+  },
+  getById: (id) => {
+    const stmt = db.prepare('SELECT * FROM badge_configs WHERE badge_id = ?');
+    stmt.bind([id]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  },
+  getEnabled: () => {
+    const result = db.exec(`
+      SELECT bc.*, bt.name, bt.rank, bt.stage
+      FROM badge_configs bc
+      LEFT JOIN badge_types bt ON bc.badge_id = bt.id
+      WHERE bc.enabled = 1
+      ORDER BY bt.name
+    `);
+    return toObjects(result);
+  },
+  isEnabled: (id) => {
+    const config = badgeConfigs.getById(id);
+    return config ? config.enabled === 1 : false;
+  },
+  upsert: (id, enabled = true) => {
+    db.run(`
+      INSERT INTO badge_configs (badge_id, enabled)
+      VALUES (?, ?)
+      ON CONFLICT(badge_id) DO UPDATE SET enabled = excluded.enabled, updated_at = datetime('now', 'localtime')
+    `, [id, enabled ? 1 : 0]);
+    saveDb();
+  },
+  upsertBatch: (configs) => {
+    for (const c of configs) {
+      db.run(`
+        INSERT INTO badge_configs (badge_id, enabled)
+        VALUES (?, ?)
+        ON CONFLICT(badge_id) DO UPDATE SET enabled = excluded.enabled, updated_at = datetime('now', 'localtime')
+      `, [c.id, c.enabled ? 1 : 0]);
+    }
+    saveDb();
+  },
+  delete: (id) => {
+    db.run('DELETE FROM badge_configs WHERE badge_id = ?', [id]);
+    saveDb();
+  },
+  clear: () => {
+    db.run('DELETE FROM badge_configs');
+    saveDb();
+  },
+};
+
 module.exports = {
   initDb,
   saveDb,
@@ -696,5 +811,7 @@ module.exports = {
   factionTaskConfigs,
   knightMissionTypes,
   knightMissionConfigs,
+  badgeTypes,
+  badgeConfigs,
   settings,
 };

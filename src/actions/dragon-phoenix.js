@@ -501,7 +501,7 @@ class DragonPhoenixAction extends ActionBase {
   }
 
   async run(params = {}) {
-    const features = params.features || ['lunwu', 'yunji', 'formation', 'baiduan'];
+    const features = params.features || ['lunwu', 'yunji'];
     const results = [];
     let hasError = false;
     
@@ -546,7 +546,8 @@ class DragonPhoenixAction extends ActionBase {
     }
     
     const successCount = results.filter(r => r.success).length;
-    const summary = `龙凰之境: ${successCount}/${results.length} 功能完成`;
+    const details = results.map(r => `${r.feature}: ${r.result}`).join('\n');
+    const summary = `龙凰之境: ${successCount}/${results.length} 功能完成\n${details}`;
     
     this.log(summary, hasError ? 'error' : 'success');
     
