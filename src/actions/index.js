@@ -31,6 +31,10 @@ const { action: wish } = require('./wish');
 const { action: altar } = require('./altar');
 const { action: missionAssign } = require('./mission-assign');
 const { action: badgeHall } = require('./badge-hall');
+const { action: calendar } = require('./calendar');
+const { action: jianghuDream } = require('./jianghu-dream');
+const { action: warriorInn } = require('./warrior-inn');
+const { action: wulinMengzhu } = require('./wulin-mengzhu');
 
 const actions = new Map([
   ['dailygift', dailyGift],
@@ -66,6 +70,10 @@ const actions = new Map([
   ['altar', altar],
   ['missionassign', missionAssign],
   ['badgehall', badgeHall],
+  ['calendar', calendar],
+  ['jianghudream', jianghuDream],
+  ['warriorinn', warriorInn],
+  ['wulinmengzhu', wulinMengzhu],
 ]);
 
 function getAction(id) {

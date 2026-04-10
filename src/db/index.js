@@ -98,6 +98,23 @@ function migrateDb() {
       updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
     )
   `); } catch (e) {}
+  try { db.run(`
+    CREATE TABLE IF NOT EXISTS exchange_types (
+      id TEXT PRIMARY KEY,
+      give_item TEXT NOT NULL,
+      give_count INTEGER DEFAULT 0,
+      get_item TEXT NOT NULL,
+      get_count INTEGER DEFAULT 0,
+      discovered_at DATETIME DEFAULT (datetime('now', 'localtime'))
+    )
+  `); } catch (e) {}
+  try { db.run(`
+    CREATE TABLE IF NOT EXISTS exchange_configs (
+      exchange_id TEXT PRIMARY KEY,
+      action TEXT DEFAULT 'reject',
+      updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
+    )
+  `); } catch (e) {}
   saveDb();
 }
 
@@ -266,6 +283,17 @@ const execLogs = {
       `SELECT * FROM exec_logs WHERE date(created_at) = date('${date}') ORDER BY created_at DESC`
     );
     return toObjects(result);
+  },
+  
+  getByModuleId: (moduleId, limit = 20) => {
+    const stmt = db.prepare(`SELECT * FROM exec_logs WHERE module_id = ? ORDER BY created_at DESC LIMIT ?`);
+    stmt.bind([moduleId, limit]);
+    const logs = [];
+    while (stmt.step()) {
+      logs.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return logs;
   },
   
   getAll: (limit = 50) => {
@@ -798,6 +826,108 @@ const badgeConfigs = {
   },
 };
 
+const exchangeTypes = {
+  getAll: () => {
+    const result = db.exec('SELECT * FROM exchange_types ORDER BY give_item, get_item');
+    return toObjects(result);
+  },
+
+  getById: (id) => {
+    const stmt = db.prepare('SELECT * FROM exchange_types WHERE id = ?');
+    stmt.bind([id]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  },
+
+  findByItems: (giveItem, getItem) => {
+    const stmt = db.prepare('SELECT * FROM exchange_types WHERE give_item = ? AND get_item = ?');
+    stmt.bind([giveItem, getItem]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  },
+
+  upsert: (id, giveItem, giveCount, getItem, getCount) => {
+    db.run(`
+      INSERT INTO exchange_types (id, give_item, give_count, get_item, get_count)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET give_item = excluded.give_item, give_count = excluded.give_count, get_item = excluded.get_item, get_count = excluded.get_count
+    `, [id, giveItem, giveCount, getItem, getCount]);
+    saveDb();
+  },
+
+  delete: (id) => {
+    db.run('DELETE FROM exchange_types WHERE id = ?', [id]);
+    saveDb();
+  },
+
+  clear: () => {
+    db.run('DELETE FROM exchange_types');
+    saveDb();
+  },
+};
+
+const exchangeConfigs = {
+  getAll: () => {
+    const result = db.exec(`
+      SELECT ec.*, et.give_item, et.give_count, et.get_item, et.get_count
+      FROM exchange_configs ec
+      LEFT JOIN exchange_types et ON ec.exchange_id = et.id
+      ORDER BY et.give_item, et.get_item
+    `);
+    return toObjects(result);
+  },
+
+  getById: (id) => {
+    const stmt = db.prepare('SELECT * FROM exchange_configs WHERE exchange_id = ?');
+    stmt.bind([id]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  },
+
+  getAction: (id) => {
+    const config = exchangeConfigs.getById(id);
+    return config ? config.action : 'reject';
+  },
+
+  shouldAccept: (id) => {
+    const config = exchangeConfigs.getById(id);
+    return config ? config.action === 'accept' : false;
+  },
+
+  upsert: (id, action = 'reject') => {
+    db.run(`
+      INSERT INTO exchange_configs (exchange_id, action)
+      VALUES (?, ?)
+      ON CONFLICT(exchange_id) DO UPDATE SET action = excluded.action, updated_at = datetime('now', 'localtime')
+    `, [id, action]);
+    saveDb();
+  },
+
+  upsertBatch: (configs) => {
+    for (const c of configs) {
+      db.run(`
+        INSERT INTO exchange_configs (exchange_id, action)
+        VALUES (?, ?)
+        ON CONFLICT(exchange_id) DO UPDATE SET action = excluded.action, updated_at = datetime('now', 'localtime')
+      `, [c.id, c.action || 'reject']);
+    }
+    saveDb();
+  },
+
+  delete: (id) => {
+    db.run('DELETE FROM exchange_configs WHERE exchange_id = ?', [id]);
+    saveDb();
+  },
+
+  clear: () => {
+    db.run('DELETE FROM exchange_configs');
+    saveDb();
+  },
+};
+
 module.exports = {
   initDb,
   saveDb,
@@ -813,5 +943,7 @@ module.exports = {
   knightMissionConfigs,
   badgeTypes,
   badgeConfigs,
+  exchangeTypes,
+  exchangeConfigs,
   settings,
 };

@@ -18,16 +18,17 @@ class MissionAssignAction extends ActionBase {
     const currentMissions = [];
     const availableMissions = [];
 
-    const currentSection = decodedHtml.match(/当前任务<br \/>([\s\S]*?)(?=<br \/><br \/>|<br \/>\[p]|<p>)/i);
+    const currentSection = decodedHtml.match(/当前任务<br\s*\/?>([\s\S]*?)(?=<br\s*\/?><br\s*\/?>|<br\s*\/?>\[p]|<p>)/i);
     if (currentSection) {
-      const missionRegex = /([^\s<]+)&nbsp;剩余时间：(\d+) 时 (\d+) 分&nbsp;<a href="[^"]*subtype=1[^"]*mission_id=(\d+)">查看<\/a>/gi;
+      const missionRegex = /([^\s<]+)\s*&?n?b?s?p?;?\s*剩余时间 [：:]\s*(\d+)\s*时\s*(\d+)\s*分/gi;
       let match;
       while ((match = missionRegex.exec(currentSection[1])) !== null) {
+        const idMatch = currentSection[1].match(new RegExp(`${match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*?mission_id=(\\d+)`, 'i'));
         currentMissions.push({
           name: match[1].trim(),
           remainingHours: parseInt(match[2]),
           remainingMinutes: parseInt(match[3]),
-          id: match[4],
+          id: idMatch ? idMatch[1] : '0',
           status: 'in_progress',
         });
       }

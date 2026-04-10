@@ -424,6 +424,25 @@
       { id: 2, name: '请鹅王扫荡', desc: '回复+2，扣200斗豆' },
     ];
     
+    const JIANGHU_DREAM_DUNGEONS = [
+      { id: 1, name: '柒承的忙碌日常' },
+      { id: 32, name: '群英拭剑谁为峰' },
+      { id: 60, name: '中原武林之危' },
+      { id: 59, name: '世外桃源梦一场' },
+      { id: 56, name: '老鹅的圣诞冒险' },
+      { id: 55, name: '南海有岛名侠客' },
+      { id: 54, name: '全真古墓意难平' },
+      { id: 53, name: '天涯浪子' },
+      { id: 52, name: '战乱襄阳' },
+      { id: 51, name: '桃花自古笑春风' },
+      { id: 50, name: '雪山藏魂' },
+      { id: 49, name: '神雕侠侣' },
+      { id: 48, name: '倚天屠龙归我心' },
+      { id: 47, name: '时空守护者' },
+      { id: 43, name: '绝世秘籍之争' },
+      { id: 37, name: '一骑红尘妃子笑' },
+    ];
+    
     document.addEventListener('DOMContentLoaded', () => {
       initNav();
       checkStatus();
@@ -602,6 +621,25 @@
           params.skillCount = moduleData.extra_data && moduleData.extra_data.skillCount ? moduleData.extra_data.skillCount : 0;
         }
         
+        if (id === 'jianghudream') {
+          const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleJianghuDreamDungeon(this)"]:checked');
+          const dungeonIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+          if (dungeonIds.length === 0) {
+            alert('请先在模块配置中选择要挑战的副本');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+          }
+          params.dungeonIds = dungeonIds;
+        }
+        
+        if (id === 'wulinmengzhu') {
+          const res = await fetch('/api/modules/wulinmengzhu');
+          const moduleData = await res.json();
+          params.groundId = moduleData.extra_data && moduleData.extra_data.groundId ? moduleData.extra_data.groundId : 1;
+          params.signup = true; // 自动执行报名
+        }
+        
         const res = await fetch(`/api/run/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -626,6 +664,14 @@
           }
           if (id === 'zodiac' && data.sweeps) {
             msg = `${data.zodiac}(${data.sweepType})\n` + data.sweeps.map((s, i) => `第${i + 1}次: ${s.message}`).join('\n');
+          }
+          if (id === 'jianghudream' && data.dungeons) {
+            msg = data.dungeons.map(r => {
+              if (r.error) return `${r.dungeon}: ${r.error}`;
+              return `${r.dungeon}: ${r.success}胜${r.fail}败`;
+            }).join('\n');
+            if (data.energyDepleted) msg += '\n(活力耗尽)';
+            if (data.countDepleted) msg += '\n(次数耗尽)';
           }
           alert('执行成功\n' + msg);
           loadStats();
@@ -800,6 +846,7 @@
                     <input type="time" id="newTime_${m.id}" style="padding:6px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;width:100px;">
                     <button class="btn btn-secondary btn-sm" onclick="addModuleTime('${m.id}')">添加</button>
                     <button class="btn btn-success btn-sm" onclick="runModule('${m.id}')">执行</button>
+                    <button class="btn btn-primary btn-sm" onclick="toggleModuleLogs('${m.id}')">查看日志</button>
                   </div>
                 </div>
                 <div style="font-size:13px;color:#8c8c8c;line-height:1.8;">${escapeHtml(m.description || '')}</div>
@@ -912,6 +959,47 @@
                     </div>
                   </div>
                 ` : ''}
+                ${m.id === 'jianghudream' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">副本选择（可多选，每个副本最多扫荡3次）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      ${JIANGHU_DREAM_DUNGEONS.map(d => `
+                        <label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                          <input type="checkbox" value="${d.id}" onchange="toggleJianghuDreamDungeon(this)" ${(m.extra_data && m.extra_data.dungeonIds && m.extra_data.dungeonIds.includes(d.id)) ? 'checked' : ''} style="accent-color:#667eea;">
+                          ${d.name}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                ${m.id === 'wulinmengzhu' ? `
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <div style="margin-bottom:8px;font-size:14px;color:#595959;">选择报名赛场（单选）：</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="wulinMengzhuGround" value="1" onchange="saveWulinMengzhuConfig()" ${(m.extra_data && m.extra_data.groundId === 1) ? 'checked' : ''} style="accent-color:#667eea;">
+                        黄金赛场<span style="color:#fa8c16;font-size:11px;margin-left:4px;">(战力≥2000)</span>
+                      </label>
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="wulinMengzhuGround" value="2" onchange="saveWulinMengzhuConfig()" ${(m.extra_data && m.extra_data.groundId === 2) ? 'checked' : ''} style="accent-color:#667eea;">
+                        白银赛场<span style="color:#1890ff;font-size:11px;margin-left:4px;">(战力≥1000)</span>
+                      </label>
+                      <label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="wulinMengzhuGround" value="3" onchange="saveWulinMengzhuConfig()" ${(m.extra_data && m.extra_data.groundId === 3) || (!m.extra_data || m.extra_data.groundId === undefined) ? 'checked' : ''} style="accent-color:#667eea;">
+                        青铜赛场<span style="color:#52c41a;font-size:11px;margin-left:4px;">(战力≥200)</span>
+                      </label>
+                    </div>
+                  </div>
+                ` : ''}
+                <div id="logs_${m.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong style="font-size:14px;color:#595959;">最近执行日志</strong>
+                    <button class="btn btn-secondary btn-sm" onclick="loadModuleLogs('${m.id}')">刷新</button>
+                  </div>
+                  <div class="log-area" id="logContent_${m.id}" style="max-height:300px;font-size:12px;">
+                    加载中...
+                  </div>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -1071,6 +1159,52 @@
         }
       } catch (e) {
         alert('保存失败：' + e.message);
+      }
+    }
+    
+    async function toggleModuleLogs(moduleId) {
+      const logsDiv = document.getElementById(`logs_${moduleId}`);
+      if (logsDiv.style.display === 'none') {
+        logsDiv.style.display = 'block';
+        loadModuleLogs(moduleId);
+      } else {
+        logsDiv.style.display = 'none';
+      }
+    }
+    
+    async function loadModuleLogs(moduleId) {
+      const logsDiv = document.getElementById(`logs_${moduleId}`);
+      const contentDiv = document.getElementById(`logContent_${moduleId}`);
+      
+      try {
+        const res = await fetch(`/api/modules/${moduleId}/logs?limit=10`);
+        const logs = await res.json();
+        
+        if (logs.error) {
+          contentDiv.innerHTML = `<div class="log-line log-error">${escapeHtml(logs.error)}</div>`;
+          return;
+        }
+        
+        if (logs.length === 0) {
+          contentDiv.innerHTML = '<div class="log-line" style="color:#888;">暂无执行日志</div>';
+          return;
+        }
+        
+        contentDiv.innerHTML = logs.map(l => {
+          const time = new Date(l.created_at).toLocaleString('zh-CN');
+          const cls = l.status === 'success' ? 'log-success' : 'log-error';
+          const result = l.result || '';
+          const lines = result.split('\n');
+          const summary = lines[0] || '';
+          const details = lines.slice(1).join('\n');
+          return `<div class="log-line ${cls}">
+            <div><span class="log-time">[${time}]</span><strong>${l.module_name}</strong> <span class="badge ${l.status === 'success' ? 'badge-success' : 'badge-error'}">${l.status === 'success' ? '成功' : '失败'}</span></div>
+            <div style="margin-top:4px;color:#aaa;">${escapeHtml(summary)}</div>
+            ${details ? `<div style="margin-top:4px;color:#888;font-size:11px;white-space:pre-wrap;">${escapeHtml(details)}</div>` : ''}
+          </div>`;
+        }).join('<div style="border-bottom:1px solid #333;margin:8px 0;"></div>');
+      } catch (e) {
+        contentDiv.innerHTML = `<div class="log-line log-error">加载失败：${escapeHtml(e.message)}</div>`;
       }
     }
     
@@ -1288,6 +1422,54 @@
       
       btn.innerHTML = '扫描助阵';
       btn.disabled = false;
+    }
+    
+    function toggleJianghuDreamDungeon(checkbox) {
+      saveJianghuDreamConfig();
+    }
+    
+    async function saveJianghuDreamConfig() {
+      try {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][onchange="toggleJianghuDreamDungeon(this)"]:checked');
+        const dungeonIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        const res = await fetch('/api/modules/jianghudream');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.dungeonIds = dungeonIds;
+        
+        await fetch('/api/modules/jianghudream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存配置失败:', e);
+      }
+    }
+    
+    function toggleWulinMengzhuGround(radio) {
+      saveWulinMengzhuConfig();
+    }
+    
+    async function saveWulinMengzhuConfig() {
+      try {
+        const radio = document.querySelector('input[name="wulinMengzhuGround"]:checked');
+        const groundId = radio ? parseInt(radio.value) : 1;
+        
+        const res = await fetch('/api/modules/wulinmengzhu');
+        const data = await res.json();
+        const extraData = data.extra_data || {};
+        extraData.groundId = groundId;
+        
+        await fetch('/api/modules/wulinmengzhu', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extra_data: JSON.stringify(extraData) })
+        });
+      } catch (e) {
+        console.error('保存武林盟主配置失败:', e);
+      }
     }
     
     let allModules = [];

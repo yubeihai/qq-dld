@@ -416,7 +416,8 @@ class KnightIslandAction extends ActionBase {
         
         const enabled = this.isMissionEnabled(mission.name);
         
-        if (!enabled && mission.canRefresh && refreshUsed[mission.pos] < maxRefreshPerPos) {
+        // 修复：刷新任何「不能接受」的任务，而不仅仅是「未启用」的任务
+        if (!mission.canAccept && mission.canRefresh && refreshUsed[mission.pos] < maxRefreshPerPos) {
           const refreshResult = await this.refreshMission(mission.pos);
           results.push({ 
             action: '刷新任务', 

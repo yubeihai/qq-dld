@@ -103,19 +103,7 @@ class ImmortalsAction extends ActionBase {
       return this.fail(error.message);
     }
 
-    // 提取剩余挑战次数
-    let remainingChallenges = 0;
-    const challengeMatch = html.match(/剩余挑战次数：(\d+)/);
-    if (challengeMatch) {
-      remainingChallenges = parseInt(challengeMatch[1], 10);
-    }
-
-    if (remainingChallenges <= 0) {
-      const summary = '仙武修真：没有剩余挑战次数';
-      this.log(summary, 'success');
-      return this.success({ result: summary, challengesUsed: 0 });
-    }
-
+    // 先领取任务奖励（活跃度等任务奖励可能会增加挑战次数）
     const tasks = [
       { taskId: 1, name: '日活跃度达到 80' },
       { taskId: 2, name: '今日消耗 1 鹅币' },
@@ -139,7 +127,7 @@ class ImmortalsAction extends ActionBase {
         
         if (result.success && result.message !== '已领取') {
           successCount++;
-        } else if (!result.success) {
+        } else if (!result.success && !result.message.includes('未达成') && !result.message.includes('未达到')) {
           failCount++;
         }
         
@@ -155,8 +143,9 @@ class ImmortalsAction extends ActionBase {
       }
     }
 
-    // 重新获取最新次数（领取任务奖励后可能增加）
+    // 领取任务奖励后，重新获取挑战次数
     await this.delay(2000);
+    let remainingChallenges = 0;
     try {
       html = await this.request('immortals', { op: 'findimmortals' });
       const challengeMatch = html.match(/剩余挑战次数：(\d+)/);
@@ -168,9 +157,9 @@ class ImmortalsAction extends ActionBase {
     }
 
     if (remainingChallenges <= 0) {
-      const summary = '仙武修真：没有剩余挑战次数';
+      const summary = '仙武修真：领取任务奖励完成，没有剩余挑战次数';
       this.log(summary, 'success');
-      return this.success({ result: summary, challengesUsed: 0 });
+      return this.success({ result: summary, challengesUsed: 0, results });
     }
 
     // 检查是否已有可挑战的仙人（之前寻访过但未挑战）

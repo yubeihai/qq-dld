@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { initDb, execLogs, cookieDb, moduleConfigs, taskTypes, taskConfigs, knightMissionTypes, knightMissionConfigs, badgeTypes, badgeConfigs } = require('../db');
+const { initDb, execLogs, cookieDb, moduleConfigs, taskTypes, taskConfigs, knightMissionTypes, knightMissionConfigs, badgeTypes, badgeConfigs, exchangeTypes, exchangeConfigs } = require('../db');
 const { getAllActions, getAction } = require('../actions');
 const { startScheduler, restartScheduler } = require('../scheduler');
 const { login } = require('../game/login');
@@ -62,6 +62,19 @@ app.get('/api/modules', (req, res) => {
 app.post('/api/modules/reset', (req, res) => {
   moduleConfigs.reset();
   res.json({ success: true });
+});
+
+app.get('/api/modules/:id/logs', (req, res) => {
+  const { id } = req.params;
+  const { limit } = req.query;
+  
+  const action = getAction(id);
+  if (!action) {
+    return res.json({ error: '模块不存在' });
+  }
+  
+  const logs = execLogs.getByModuleId(id, parseInt(limit) || 20);
+  res.json(logs);
 });
 
 app.get('/api/modules/:id', (req, res) => {
@@ -470,6 +483,56 @@ app.post('/api/badge-upgrade-selected', async (req, res) => {
   } catch (error) {
     res.json({ error: error.message });
   }
+});
+
+// ========== 交换配置 API ==========
+
+// 获取所有交换类型和配置
+app.get('/api/exchange-configs', (req, res) => {
+  const types = exchangeTypes.getAll();
+  const configs = exchangeConfigs.getAll();
+  res.json({ types, configs });
+});
+
+// 更新交换配置
+app.post('/api/exchange-configs', (req, res) => {
+  const { id, action } = req.body;
+  
+  if (!id) {
+    return res.json({ error: '缺少交换ID' });
+  }
+  
+  if (!['accept', 'reject'].includes(action)) {
+    return res.json({ error: 'action 必须是 accept 或 reject' });
+  }
+  
+  exchangeConfigs.upsert(id, action);
+  res.json({ success: true, id, action });
+});
+
+// 批量更新交换配置
+app.post('/api/exchange-configs/batch', (req, res) => {
+  const { configs } = req.body;
+  
+  if (!Array.isArray(configs)) {
+    return res.json({ error: 'configs 必须是数组' });
+  }
+  
+  exchangeConfigs.upsertBatch(configs);
+  res.json({ success: true, count: configs.length });
+});
+
+// 删除交换配置
+app.delete('/api/exchange-configs/:id', (req, res) => {
+  const { id } = req.params;
+  exchangeConfigs.delete(id);
+  res.json({ success: true });
+});
+
+// 清空所有交换配置
+app.delete('/api/exchange-configs', (req, res) => {
+  exchangeConfigs.clear();
+  res.json({ success: true });
 });
 
 async function start() {

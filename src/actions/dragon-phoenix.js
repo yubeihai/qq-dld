@@ -132,29 +132,26 @@ class DragonPhoenixAction extends ActionBase {
     const rewardThresholds = [1, 8, 18, 26, 36];
     const availableRewards = [];
     
-    const rewardPattern = /(\d+)\s*<a[^>]*?op=reward[^>]*?idx=(\d+)[^>]*>([^<]+)<\/a>/gi;
+    // 匹配奖励链接，格式如: "8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="...op=reward&idx=2">领奖</a>"
+    // 注意：数字和链接之间可能有大量 &nbsp; HTML实体，用 [^<]* 匹配任意非<字符
+    const rewardPattern = /(\d+)[^<]*<a[^>]*op=reward[^>]*>([^<]+)<\/a>/gi;
     let rewardMatch;
     
     while ((rewardMatch = rewardPattern.exec(html)) !== null) {
       const threshold = parseInt(rewardMatch[1]);
-      const idx = parseInt(rewardMatch[2]);
-      const text = rewardMatch[3].trim();
+      const linkHtml = rewardMatch[0];
+      const text = rewardMatch[2].trim();
+      
+      // 从完整链接HTML中提取idx参数
+      const idxMatch = linkHtml.match(/idx=(\d+)/);
+      const idx = idxMatch ? parseInt(idxMatch[1]) : null;
       
       if (fightCount >= threshold) {
         availableRewards.push({ threshold, idx, text, canClaim: true });
       }
     }
     
-    const simpleRewardPattern = /(\d+)\s*<a[^>]*?op=reward[^>]*>([^<]+)<\/a>/gi;
-    let simpleRewardMatch;
-    while ((simpleRewardMatch = simpleRewardPattern.exec(html)) !== null) {
-      const threshold = parseInt(simpleRewardMatch[1]);
-      const text = simpleRewardMatch[2].trim();
-      
-      if (fightCount >= threshold && !availableRewards.find(r => r.threshold === threshold)) {
-        availableRewards.push({ threshold, text, canClaim: true });
-      }
-    }
+    
     
     const exchanges = [];
     const exchangePattern = /([^<(]+)\((\d+)龙凰点\)\s*剩余\s*(\d+)\/(\d+)/g;
@@ -370,19 +367,90 @@ class DragonPhoenixAction extends ActionBase {
         };
       }
       
-      const fightLinks = this.extractLinks(html);
-      const fightLink = fightLinks.find(link => link.url && link.url.includes('op=fight'));
+      results.push(`挑战次数: ${info.times}`);
       
-      if (fightLink) {
-        const fightHtml = await this.fetchUrl(fightLink.url);
-        const result = this.parseFightResult(fightHtml);
-        results.push(result.result);
-        return { success: result.success, result: results.join('\n'), noChance: result.noChance };
+      // 提取挑战链接 (op=pk)
+      const fightLinks = this.extractLinks(html);
+      let pkLinks = fightLinks.filter(link => 
+        link.url && link.url.includes('op=pk') && link.text.includes('挑战')
+      );
+      
+      if (pkLinks.length === 0) {
+        results.push('⚠️ 未找到可挑战的对手');
+        return { success: false, result: results.join('\n') };
+      }
+      
+      // 循环挑战直到次数用完
+      const fightInterval = 30000; // 挑战间隔 30秒
+      let challengeCount = 0;
+      let totalWins = 0;
+      let totalLosses = 0;
+      let remainingTimes = info.times;
+      
+      while (remainingTimes > 0) {
+        // 随机选择一个对手
+        const targetLink = pkLinks[Math.floor(Math.random() * pkLinks.length)];
+        
+        results.push(`🎯 挑战对手: ${targetLink.text || '未知'}`);
+        
+        try {
+          const fightHtml = await this.fetchUrl(targetLink.url);
+          const result = this.parseFightResult(fightHtml);
+          
+          challengeCount++;
+          if (result.success) {
+            totalWins++;
+          } else if (!result.noChance) {
+            totalLosses++;
+          }
+          
+          results.push(result.result);
+          
+          if (result.noChance) {
+            break;
+          }
+          
+          // 更新剩余次数
+          remainingTimes--;
+          
+          // 如果还有次数，等待30秒后继续
+          if (remainingTimes > 0) {
+            results.push(`⏳ 等待30秒后继续挑战...`);
+            await this.sleep(fightInterval);
+            
+            // 刷新页面获取新的对手列表
+            const newHtml = await this.request('dragonphoenix', { op: 'lunwu' });
+            const newInfo = this.parseLunwuPage(newHtml);
+            const newLinks = this.extractLinks(newHtml);
+            pkLinks = newLinks.filter(link => 
+              link.url && link.url.includes('op=pk') && link.text.includes('挑战')
+            );
+            
+            if (newInfo) {
+              remainingTimes = newInfo.times;
+              results.push(`剩余挑战次数: ${remainingTimes}`);
+            }
+            
+            if (pkLinks.length === 0) {
+              results.push('⚠️ 无更多可挑战对手');
+              break;
+            }
+          }
+        } catch (e) {
+          results.push(`⚠️ 挑战异常: ${e.message}`);
+          break;
+        }
+      }
+      
+      // 统计结果
+      if (challengeCount > 0) {
+        results.push(`\n📊 挑战统计: ${challengeCount}次 (胜${totalWins} 负${totalLosses})`);
       }
       
       return { 
-        success: true, 
-        result: results.length > 1 ? results.join('\n') : '✅ 龙凰论武已处理'
+        success: totalWins > 0 || challengeCount > 0,
+        result: results.join('\n'),
+        noChance: remainingTimes <= 0
       };
     } catch (error) {
       return { success: false, result: error.message };
