@@ -1,4 +1,6 @@
 const { ActionBase } = require('../core/action-base');
+const { SessionLogger } = require('../core/session-logger');
+const { ErrorHandler } = require('../core/error-handler');
 const { settings } = require('../db');
 
 class StoreAction extends ActionBase {
@@ -9,6 +11,18 @@ class StoreAction extends ActionBase {
       description: '扫描背包物品、查看道具详情、设置供奉物品',
       category: '查询功能',
     });
+
+    this.typeNames = {
+      '0': '全部',
+      '1': '药水',
+      '2': '属性',
+      '3': '强化',
+      '4': '魂珠',
+      '5': '锦囊',
+      '6': '星石',
+      '7': '荣誉',
+      '10': '其它',
+    };
   }
 
   getOblationConfig() {
@@ -77,22 +91,27 @@ class StoreAction extends ActionBase {
 
   async run(params = {}) {
     const { type = null, action = 'scan', itemIds = [] } = params;
+    const logger = this.createLogger(params.source || 'manual');
+    logger.start({ action, type, itemIds });
 
     if (action === 'setOblation') {
       const config = this.getOblationConfig();
       if (itemIds.length > 0) {
         const newConfig = [...new Set([...config, ...itemIds])];
         this.setOblationConfig(newConfig);
-        this.log(`添加供奉物品: ${itemIds.join(', ')}`, 'success');
+        logger.step('config', '设置供奉物品', 'success', { itemIds, newConfig }, '', Date.now());
+        logger.end('success', { oblationItems: newConfig });
         return this.success({ message: '添加成功', oblationItems: newConfig });
       }
-      this.log(`当前供奉配置: ${config.length > 0 ? config.join(', ') : '未配置'}`, 'success');
+      logger.step('config', '查询供奉配置', 'success', { oblationItems: config }, '', Date.now());
+      logger.end('success', { oblationItems: config });
       return this.success({ oblationItems: config });
     }
 
     if (action === 'clearOblation') {
       this.setOblationConfig([]);
-      this.log('已清空供奉配置', 'success');
+      logger.step('config', '清空供奉配置', 'success', {}, '', Date.now());
+      logger.end('success', { message: '已清空' });
       return this.success({ message: '已清空' });
     }
 
@@ -100,45 +119,63 @@ class StoreAction extends ActionBase {
       const config = this.getOblationConfig();
       const newConfig = config.filter(id => !itemIds.includes(id));
       this.setOblationConfig(newConfig);
-      this.log(`移除供奉物品: ${itemIds.join(', ')}`, 'success');
+      logger.step('config', '移除供奉物品', 'success', { itemIds }, '', Date.now());
+      logger.end('success', { oblationItems: newConfig });
       return this.success({ oblationItems: newConfig });
-    }
-
-    try {
-      const html = await this.request('index', {});
-      if (!html || html.includes('ptlogin2.qq.com')) {
-        this.log('登录已过期，请重新扫码登录', 'error');
-        return this.fail('登录已过期，请重新扫码登录');
-      }
-    } catch (error) {
-      this.log('检查登录失败: ' + error.message, 'error');
-      return this.fail(error.message);
     }
 
     let allItems = [];
     let tabs = [];
+    let totalScanned = 0;
     const MAX_PAGES = 10;
 
     try {
-      const typeNames = {'0': '全部', '1': '药水', '2': '属性', '3': '强化', '4': '魂珠', '5': '锦囊', '6': '星石', '7': '荣誉', '10': '其它'};
-      const storeTypes = Object.keys(typeNames);
-      
-      tabs = storeTypes.map(t => ({ id: t, name: typeNames[t] || t }));
+      const loginStart = Date.now();
+      const html = await this.request('index', {});
+      const loginElapsed = Date.now() - loginStart;
 
+      if (!html || html.includes('ptlogin2.qq.com')) {
+        logger.step('check', '登录状态', 'failed', {}, '登录已过期', loginElapsed);
+        return this.handleError(ErrorHandler.loginExpired());
+      }
+
+      logger.step('check', '登录状态', 'success', {}, '', loginElapsed);
+    } catch (error) {
+      logger.step('check', '登录状态', 'failed', {}, error.message, Date.now());
+      return this.handleError(error);
+    }
+
+    try {
+      const storeTypes = Object.keys(this.typeNames);
+      tabs = storeTypes.map(t => ({ id: t, name: this.typeNames[t] || t }));
       const typesToScan = type ? [String(type)] : storeTypes.filter(t => t !== '0');
 
       for (const storeType of typesToScan) {
+        const typeStart = Date.now();
         let page = 1;
         let totalPages = 1;
+        let typeItemCount = 0;
 
         do {
+          const scanStart = Date.now();
           const result = await this.scanStore(storeType, page);
+          const elapsed = Date.now() - scanStart;
+
           if (result.items.length > 0) {
             allItems = allItems.concat(result.items);
+            typeItemCount += result.items.length;
           }
+
+          logger.step('scan', `${this.typeNames[storeType]} 第${page}页`, 'success',
+            { itemCount: result.items.length }, '', elapsed);
+
           totalPages = Math.min(result.totalPages || 1, MAX_PAGES);
+          totalScanned++;
           page++;
         } while (page <= totalPages);
+
+        logger.step('scan', `${this.typeNames[storeType]} 分类`, 'success',
+          { totalCount: typeItemCount }, '', Date.now() - typeStart);
       }
 
       const uniqueMap = new Map();
@@ -149,25 +186,32 @@ class StoreAction extends ActionBase {
       });
       allItems = Array.from(uniqueMap.values());
 
-      const summary = `背包扫描完成：共${allItems.length}种物品`;
-      this.log(summary, 'success');
-
       const oblationItems = this.getOblationConfig();
       const itemsWithOblation = allItems.map(item => ({
         ...item,
         isOblation: oblationItems.includes(item.id),
       }));
 
+      const summary = `背包扫描完成：共${allItems.length}种物品`;
+      logger.step('scan', '去重合并', 'success', { uniqueCount: allItems.length }, '', Date.now());
+      logger.end('success', {
+        totalCount: allItems.length,
+        scannedPages: totalScanned,
+        oblationItems,
+      });
+
       return this.success({
         result: summary,
         items: itemsWithOblation,
-        tabs: tabs,
+        tabs,
         totalCount: allItems.length,
         oblationItems,
+        sessionId: logger.sessionId,
       });
     } catch (error) {
-      this.log('扫描失败: ' + error.message, 'error');
-      return this.fail(error.message);
+      logger.step('scan', '扫描失败', 'failed', {}, error.message, Date.now());
+      logger.end('failed', { error: error.message });
+      return this.handleError(error);
     }
   }
 }

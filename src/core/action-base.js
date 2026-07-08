@@ -1,5 +1,7 @@
-const { client } = require('./game-client');
-const { execLogs } = require('../db');
+const { client } = require('../core/game-client');
+const { execLogs, logSessions } = require('../db');
+const { SessionLogger } = require('../core/session-logger');
+const { ErrorHandler } = require('../core/error-handler');
 
 class ActionBase {
   constructor(config = {}) {
@@ -49,8 +51,15 @@ class ActionBase {
   fail(error) {
     return { success: false, error: error.message || error };
   }
+
+  createLogger(source = 'manual') {
+    return new SessionLogger(this.id, this.name, source);
+  }
+
+  handleError(error) {
+    const eh = new ErrorHandler();
+    return eh.handle(error, { moduleId: this.id });
+  }
 }
 
-module.exports = {
-  ActionBase,
-};
+module.exports = { ActionBase };

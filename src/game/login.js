@@ -35,10 +35,10 @@ async function login() {
   
   try {
     browser = await puppeteer.launch({
-      headless: false,
+      headless: 'new',
       executablePath,
       defaultViewport: { width: 500, height: 700 },
-      args: ['--no-sandbox', '--disable-web-security'],
+      args: ['--no-sandbox', '--disable-web-security', '--disable-gpu'],
     });
 
     console.log('浏览器启动成功');
@@ -55,7 +55,25 @@ async function login() {
       console.log('页面加载超时，继续等待用户操作...', e.message);
     }
     
-    console.log('请在浏览器窗口中扫码登录...');
+    const qrSelector = '#qrcode_canvas img, .qr-img, img[src*="qr"], canvas';
+    let qrCode = null;
+    
+    try {
+      const qrElement = await page.$(qrSelector);
+      if (qrElement) {
+        const screenshot = await qrElement.screenshot();
+        qrCode = `data:image/png;base64,${screenshot.toString('base64')}`;
+        console.log('二维码已捕获');
+      } else {
+        console.log('未找到二维码元素，尝试全屏截图');
+        const screenshot = await page.screenshot({ fullPage: false });
+        qrCode = `data:image/png;base64,${screenshot.toString('base64')}`;
+      }
+    } catch (e) {
+      console.log('捕获二维码失败:', e.message);
+    }
+    
+    console.log('等待扫码登录中...');
     console.log('登录成功后窗口会自动关闭，最长等待 5 分钟');
     
     let loggedIn = false;
@@ -104,7 +122,7 @@ async function login() {
     
     await browser.close();
     
-    return true;
+    return { success: true, qrCode };
   } catch (error) {
     console.error('登录过程出错:', error.message);
     console.error('错误堆栈:', error.stack);

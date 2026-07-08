@@ -1,8 +1,28 @@
 const schedule = require('node-schedule');
-const { getAction } = require('../actions');
+const { getAction, registry } = require('../actions');
 const { moduleConfigs } = require('../db');
+const { JobQueue } = require('./job-queue');
+const { jobRunner } = require('./job-runner');
 
 const jobs = {};
+const jobQueue = new JobQueue({
+  concurrency: 1,
+  onJobStart: (job) => {
+    console.log(`[队列] 开始执行: ${job.moduleId} (${job.id})`);
+  },
+  onJobEnd: (job, error) => {
+    const status = error ? '失败' : '完成';
+    const duration = job.endedAt - job.startedAt;
+    console.log(`[队列] ${job.moduleId} ${status} (${duration}ms)`);
+    if (error) {
+      console.error(`[队列] ${job.moduleId} 错误:`, error.message);
+    }
+  },
+});
+
+jobQueue.onComplete = async (job) => {
+  return jobRunner.runJob(job);
+};
 
 function parseTime(timeStr) {
   const [hour, minute] = timeStr.split(':').map(Number);
@@ -16,14 +36,14 @@ function parseTimes(timesStr) {
 
 function startScheduler() {
   stopScheduler();
-  
+
   const configs = moduleConfigs.getEnabledAutoModules();
-  
+
   if (configs.length === 0) {
     console.log('没有启用的定时任务');
     return;
   }
-  
+
   const timeGroups = {};
   configs.forEach(config => {
     const times = parseTimes(config.auto_time);
@@ -34,26 +54,24 @@ function startScheduler() {
       timeGroups[time].push(config);
     });
   });
-  
+
   Object.keys(timeGroups).forEach(time => {
     const { hour, minute } = parseTime(time);
-    
+
     const job = schedule.scheduleJob({ hour, minute }, async () => {
-      console.log(`[定时任务] ${time} 执行...`);
-      
+      console.log(`[定时任务] ${time} 触发，加入队列...`);
+
       const modules = timeGroups[time];
       for (const config of modules) {
-        const action = getAction(config.id);
-        if (!action) continue;
-        try {
-          console.log(`[定时任务] 执行 ${action.name}...`);
-          await action.run();
-        } catch (error) {
-          console.error(`[定时任务] ${action.name} 执行失败:`, error.message);
-        }
+        jobQueue.enqueue({
+          moduleId: config.id,
+          params: config.params ? JSON.parse(config.params || '{}') : {},
+          source: 'scheduler',
+          priority: 0,
+        });
       }
     });
-    
+
     jobs[time] = job;
     console.log(`已设置定时任务：每天 ${time} 执行 ${timeGroups[time].map(c => c.name).join('、')}`);
   });
@@ -71,8 +89,46 @@ function restartScheduler() {
   startScheduler();
 }
 
+function enqueueJob(moduleId, params = {}, options = {}) {
+  return jobQueue.enqueue({
+    moduleId,
+    params,
+    source: options.source || 'api',
+    priority: options.priority || 0,
+  });
+}
+
+function getSchedulerStatus() {
+  const scheduledTimes = Object.keys(jobs);
+  const queueStatus = jobQueue.getStatus();
+
+  return {
+    running: scheduledTimes.length > 0,
+    jobCount: scheduledTimes.length,
+    times: scheduledTimes,
+    queue: queueStatus,
+  };
+}
+
+function getQueueStatus() {
+  return jobQueue.getStatus();
+}
+
+function getQueueJobs() {
+  return jobQueue.getJobs();
+}
+
+function clearQueue() {
+  jobQueue.clear();
+}
+
 module.exports = {
   startScheduler,
   stopScheduler,
   restartScheduler,
+  getSchedulerStatus,
+  enqueueJob,
+  getQueueStatus,
+  getQueueJobs,
+  clearQueue,
 };

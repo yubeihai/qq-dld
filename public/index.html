@@ -283,7 +283,10 @@
         <h2>扫码登录</h2>
         <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
-      <p style="margin-bottom: 20px; color: #8c8c8c;">请在弹出的浏览器窗口中扫码登录</p>
+      <p style="margin-bottom: 20px; color: #8c8c8c;">请使用手机 QQ 扫描下方二维码登录</p>
+      <div id="qrCodeContainer" style="margin-bottom: 20px; display: flex; justify-content: center;">
+        <img id="qrCodeImg" src="" alt="二维码" style="max-width: 200px; display: none;" />
+      </div>
       <div id="loginStatus">等待扫码...</div>
     </div>
   </div>
@@ -502,16 +505,24 @@
     document.getElementById('loginBtn').addEventListener('click', async () => {
       document.getElementById('loginModal').classList.add('active');
       document.getElementById('loginStatus').textContent = '正在打开浏览器...';
+      document.getElementById('qrCodeImg').style.display = 'none';
       try {
-        await fetch('/api/login', { method: 'POST' });
+        const res = await fetch('/api/login', { method: 'POST' });
+        const data = await res.json();
+        if (data.qrCode) {
+          document.getElementById('qrCodeImg').src = data.qrCode;
+          document.getElementById('qrCodeImg').style.display = 'block';
+        }
         document.getElementById('loginStatus').textContent = '请扫码登录...';
-        setTimeout(async () => {
+        const pollInterval = setInterval(async () => {
           await checkStatus();
           if (document.getElementById('statusBadge').classList.contains('online')) {
+            clearInterval(pollInterval);
             document.getElementById('loginStatus').textContent = '登录成功！';
             setTimeout(() => closeModal(), 1000);
           }
-        }, 3000);
+        }, 2000);
+        setTimeout(() => clearInterval(pollInterval), 300000);
       } catch (e) {
         document.getElementById('loginStatus').textContent = '登录失败：' + e.message;
       }

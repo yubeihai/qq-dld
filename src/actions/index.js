@@ -1,101 +1,35 @@
-const { action: dailyGift } = require('./daily-gift');
-const { action: friendFight } = require('./friend-fight');
-const { action: friendInfo } = require('./friend-info');
-const { action: store } = require('./store');
-const { action: wulin } = require('./wulin');
-const { action: tenLottery } = require('./ten-lottery');
-const { action: knightFight } = require('./knight-fight');
-const { action: towerFight } = require('./tower-fight');
-const { action: callbackRecall } = require('./callback-recall');
-const { action: adventure } = require('./adventure');
-const { action: task } = require('./task');
-const { action: zodiac } = require('./zodiac');
-const { action: cargo } = require('./cargo');
-const { action: manor } = require('./manor');
-const { action: faction } = require('./faction');
-const { action: misty } = require('./misty');
-const { action: formation } = require('./formation');
-const { action: worldTree } = require('./world-tree');
-const { action: spaceRelic } = require('./space-relic');
-const { action: scrollDungeon } = require('./scroll-dungeon');
-const { action: sect } = require('./sect');
-const { action: dragonPhoenix } = require('./dragon-phoenix');
-const { action: knightIsland } = require('./knight-island');
-const { action: abyssTide } = require('./abyss-tide');
-const { action: peakFight } = require('./peak-fight');
-const { action: livenessGift } = require('./liveness-gift');
-const { action: enchant } = require('./enchant');
-const { action: ascendHeaven } = require('./ascend-heaven');
-const { action: immortals } = require('./immortals');
-const { action: wish } = require('./wish');
-const { action: altar } = require('./altar');
-const { action: missionAssign } = require('./mission-assign');
-const { action: badgeHall } = require('./badge-hall');
-const { action: calendar } = require('./calendar');
-const { action: jianghuDream } = require('./jianghu-dream');
-const { action: warriorInn } = require('./warrior-inn');
-const { action: wulinMengzhu } = require('./wulin-mengzhu');
+const path = require('path');
+const { registry } = require('../modules/registry');
 
-const actions = new Map([
-  ['dailygift', dailyGift],
-  ['friendfight', friendFight],
-  ['friendinfo', friendInfo],
-  ['store', store],
-  ['wulin', wulin],
-  ['tenlottery', tenLottery],
-  ['knightfight', knightFight],
-  ['towerfight', towerFight],
-  ['callbackrecall', callbackRecall],
-  ['adventure', adventure],
-  ['task', task],
-  ['zodiac', zodiac],
-  ['cargo', cargo],
-  ['manor', manor],
-  ['faction', faction],
-  ['misty', misty],
-  ['formation', formation],
-  ['worldtree', worldTree],
-  ['spacerelic', spaceRelic],
-  ['scrolldungeon', scrollDungeon],
-  ['sect', sect],
-  ['dragonphoenix', dragonPhoenix],
-  ['knightisland', knightIsland],
-  ['abysstide', abyssTide],
-  ['peakfight', peakFight],
-  ['livenessgift', livenessGift],
-  ['enchant', enchant],
-  ['ascendheaven', ascendHeaven],
-  ['immortals', immortals],
-  ['wish', wish],
-  ['altar', altar],
-  ['missionassign', missionAssign],
-  ['badgehall', badgeHall],
-  ['calendar', calendar],
-  ['jianghudream', jianghuDream],
-  ['warriorinn', warriorInn],
-  ['wulinmengzhu', wulinMengzhu],
-]);
+// 自动发现并注册 actions 目录下的所有模块
+const actionsDir = __dirname;
+registry.discoverSync(actionsDir);
 
+// 向后兼容: 导出 registry 方法
 function getAction(id) {
-  return actions.get(id);
+  return registry.get(id);
 }
 
 function getAllActions() {
-  return Array.from(actions.entries()).map(([id, action]) => ({
-    id,
-    name: action.name,
-    description: action.description,
-    category: action.category,
-  }));
+  return registry.getAll();
 }
 
-module.exports = {
-  actions,
+function getRegistry() {
+  return registry;
+}
+
+// 向后兼容: 直接导出所有 action 实例
+const exportsObj = {
+  registry,
   getAction,
   getAllActions,
-  dailyGift,
-  friendFight,
-  friendInfo,
-  wish,
-  missionAssign,
+  getRegistry,
 };
+
+// 导出所有已注册的 action
+for (const [id, action] of registry.modules) {
+  exportsObj[action.constructor.name] = action.constructor;
+  exportsObj[id] = action;
+}
+
+module.exports = exportsObj;
