@@ -1,1 +1,23 @@
-{ "name": "@qq-dld/web", "version": "0.0.0", "private": true }
+{
+  "name": "@qq-dld/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vue3 + Vant4 web frontend workspace",
+  "type": "module",
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@qq-dld/shared": "0.0.0",
+    "vue": "^3.4.27",
+    "vant": "^4.9.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.11",
+    "vue-tsc": "^2.0.19"
+  },
+  "files": ["dist"]
+}
