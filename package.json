@@ -8,7 +8,10 @@
   "scripts": {
     "start": "node src/web/index.js",
     "stop": "node stop.js",
-    "dev": "node src/web/index.js"
+    "dev": "node src/web/index.js",
+    "build": "npm run build --workspaces",
+    "typecheck": "tsc --build --force && vue-tsc --noEmit -p packages/web/tsconfig.json",
+    "dev:workspaces": "npm run dev --workspaces"
   },
   "dependencies": {
     "@fission-ai/openspec": "^1.5.0",
