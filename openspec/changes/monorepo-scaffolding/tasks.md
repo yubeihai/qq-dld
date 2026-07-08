@@ -1,3 +1,5 @@
+<!-- review_mode: off - scaffolding change, no runtime business logic; code review skipped per user choice -->
+
 ## 1. Root workspace configuration
 
 - [ ] 1.1 Add `workspaces` field to root `package.json` enumerating `packages/shared`, `packages/server`, `packages/web` (in dependency order)

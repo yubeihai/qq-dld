@@ -3,6 +3,8 @@
   "version": "2.0.0",
   "description": "QQ 大乐斗自动任务系统 (开发中)",
   "main": "src/web/index.js",
+  "private": true,
+  "workspaces": ["packages/shared", "packages/server", "packages/web"],
   "scripts": {
     "start": "node src/web/index.js",
     "stop": "node stop.js",
@@ -18,6 +20,8 @@
     "sql.js": "^1.10.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.7"
   }
 }
