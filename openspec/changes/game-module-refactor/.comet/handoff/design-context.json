@@ -1,0 +1,14 @@
+{
+  "change": "game-module-refactor",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "6faa721b4e18a31cbb1fa96e035420be10dede85e2f95201a6916ba68be00fde",
+  "files": [
+    { "path": "openspec/changes/game-module-refactor/proposal.md", "sha256": "213356286c138dce7402a3432ca4aa1b1a4e803dc5a0e12a96e3d0099834e17a" },
+    { "path": "openspec/changes/game-module-refactor/design.md", "sha256": "6cd88a963cd1b30f6237d353255c1b9791e18caeaca9ffd166b76946da49f46d" },
+    { "path": "openspec/changes/game-module-refactor/tasks.md", "sha256": "2d09049041dc67b6b09fb789ee21b7114822b306cb4ce163279fc5ab7dc839e4" },
+    { "path": "openspec/changes/game-module-refactor/specs/game-modules/spec.md", "sha256": "fa16856b073551dadfc671563577b13ea18304baaca455d594422d45dcd565a4" }
+  ]
+}
