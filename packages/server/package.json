@@ -13,11 +13,12 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b",
     "test": "node --import tsx --test src/data/__tests__/data-layer.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
+    "@fastify/formbody": "^8.0.2",
     "@fastify/jwt": "^10.2.0",
     "@qq-dld/shared": "*",
     "@sinclair/typebox": "^0.34.50",
