@@ -4,5 +4,6 @@
   "openspec_tasks": "openspec/changes/game-module-refactor/tasks.md",
   "openspec_delta_spec": "openspec/changes/game-module-refactor/specs/game-modules/spec.md",
   "handoff_context": "openspec/changes/game-module-refactor/.comet/handoff/design-context.json",
-  "handoff_markdown": "openspec/changes/game-module-refactor/.comet/handoff/design-context.md"
+  "handoff_markdown": "openspec/changes/game-module-refactor/.comet/handoff/design-context.md",
+  "archive_directory": "openspec/changes/archive/2026-07-09-game-module-refactor"
 }

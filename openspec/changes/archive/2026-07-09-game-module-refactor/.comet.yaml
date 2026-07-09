@@ -1,6 +1,6 @@
 workflow: full
 language: en
-phase: build
+phase: archive
 context_compression: off
 build_mode: executing-plans
 build_pause: null
@@ -13,12 +13,12 @@ auto_transition: true
 base_ref: feb339695d2f87dd4291fab21c10626b53630f6c
 design_doc: docs/superpowers/specs/2026-07-09-game-module-refactor-design.md
 plan: null
-verify_result: pending
-verification_report: null
-branch_status: pending
+verify_result: pass
+verification_report: docs/superpowers/reports/2026-07-09-game-module-refactor-verify.md
+branch_status: handled
 created_at: 2026-07-09
-verified_at: null
-archived: false
+verified_at: 2026-07-09
+archived: true
 direct_override: null
 build_command: null
 verify_command: null

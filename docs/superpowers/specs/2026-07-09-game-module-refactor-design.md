@@ -2,6 +2,8 @@
 comet_change: game-module-refactor
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-09-game-module-refactor
+status: final
 ---
 
 # Game Module Refactor — Technical Design
@@ -22,3 +24,4 @@ canonical_spec: openspec
 4. Port friend-fight
 5. Update Fastify routes
 6. Build verify
+
