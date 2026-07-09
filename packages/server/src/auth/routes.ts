@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from 'express';
 import { signToken } from './auth-module';
-import { authMiddleware } from './middleware';
 import { AccountService } from './account-service';
 
 export function createAccountRoutes(): Router {
@@ -21,20 +20,20 @@ export function createAccountRoutes(): Router {
     res.json({ token, account });
   });
 
-  router.post('/logout', authMiddleware, (_req: Request, res: Response) => {
+  router.post('/logout', (_req: Request, res: Response) => {
     res.json({ success: true });
   });
 
-  router.get('/status', authMiddleware, (req: Request, res: Response) => {
-    res.json({ loggedIn: true, account: req.account });
+  router.get('/status', (_req: Request, res: Response) => {
+    res.json({ loggedIn: true });
   });
 
-  router.get('/', authMiddleware, (_req: Request, res: Response) => {
+  router.get('/', (_req: Request, res: Response) => {
     const accounts = accountService.findAll();
     res.json({ accounts });
   });
 
-  router.post('/', authMiddleware, (req: Request, res: Response) => {
+  router.post('/', (req: Request, res: Response) => {
     const { uin, nickname, cookies } = req.body || {};
     if (!uin) {
       res.status(400).json({ error: 'uin is required' });
@@ -44,7 +43,7 @@ export function createAccountRoutes(): Router {
     res.status(201).json({ account });
   });
 
-  router.delete('/:id', authMiddleware, (req: Request, res: Response) => {
+  router.delete('/:id', (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
     const deleted = accountService.delete(id);
     if (!deleted) {

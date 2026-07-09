@@ -1,25 +1,20 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, type TokenPayload } from './auth-module';
 
-declare global {
-  namespace Express {
-    interface Request {
-      account?: TokenPayload;
-    }
-  }
-}
-
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
+export async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const header = request.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or malformed authorization header' });
+    reply.status(401).send({ error: 'Missing or malformed authorization header' });
     return;
   }
   const token = header.slice(7);
   try {
-    req.account = verifyToken(token);
-    next();
+    request.user = verifyToken(token) as object;
   } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    reply.status(401).send({ error: 'Invalid or expired token' });
   }
+}
+
+export function getUser(request: FastifyRequest): TokenPayload | undefined {
+  return request.user as TokenPayload | undefined;
 }
