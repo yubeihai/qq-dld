@@ -143,6 +143,12 @@ Same QQ number re-scan → existing account updated (not duplicated). Different 
 - No puppeteer-core, no axios needed for login
 - Remove puppeteer-core from packages/server deps if present
 
+## Implementation Divergence
+
+### D3: Express → Fastify Native
+
+The design doc originally specified Express-compatible middleware (`(req, res, next)` style) with the assumption that Fastify migration was a future change (change 4). During implementation, it was discovered that the project already uses Fastify as its HTTP server (`packages/server/src/server.ts` imports Fastify, not Express). The middleware was therefore implemented as a Fastify `preHandler` (`authPreHandler`) and routes as Fastify plugins (`authRoutes`, `accountRoutes`). This eliminates the Express→Fastify migration debt entirely and is the correct approach for the current project state. The `@fastify/jwt` dependency was also removed in favor of the standalone `AuthModule` as the sole JWT authority.
+
 ## Risks
 
 - QQ ptlogin2 API is undocumented and may change — ptqrtoken hash33 algorithm and ptuiCB format are reverse-engineered

@@ -4,6 +4,9 @@ data/*.sqlite-journal
 data/*.sqlite-shm
 data/*.sqlite-wal
 data/database.sqlite
+packages/server/data/*.sqlite
+packages/server/data/*.sqlite-shm
+packages/server/data/*.sqlite-wal
 
 # 依赖
 node_modules/
