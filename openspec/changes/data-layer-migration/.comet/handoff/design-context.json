@@ -1,0 +1,14 @@
+{
+  "change": "data-layer-migration",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "3d1c5d6c89c340a974191df110d621a5ad080515344d3a853bdf66a4788afdcb",
+  "files": [
+    { "path": "openspec/changes/data-layer-migration/proposal.md", "sha256": "243e22ecba94df7bbf28886c6054c1a3337394fb13e02ca6c2fba8ad8feb7c87" },
+    { "path": "openspec/changes/data-layer-migration/design.md", "sha256": "c6343a55a816a028a993f9de93afe1f18110fb06e4b13bb389bc8a09d3d833de" },
+    { "path": "openspec/changes/data-layer-migration/tasks.md", "sha256": "ab1cbc257dd4a2317fa8b33ee7eb144bfb9f6ef517a0ac8fce96405484c32471" },
+    { "path": "openspec/changes/data-layer-migration/specs/data-layer/spec.md", "sha256": "81a3383cc9eefd7eedfab485fe42efc87fe32f02b79f9010832526cafec062f2" }
+  ]
+}
