@@ -1,5 +1,6 @@
 import type { Account } from '@qq-dld/shared';
 import { AccountRepo } from '../data/repositories/account-repo';
+import { SettingsRepo } from '../data/repositories/settings-repo';
 import { DataLayer } from '../data/data-layer';
 
 interface AccountRow {
@@ -11,6 +12,10 @@ interface AccountRow {
   created_at: string;
   updated_at: string;
 }
+
+export type PublicAccount = Omit<Account, 'cookies'>;
+
+const ACTIVE_ACCOUNT_KEY = 'current_account_id';
 
 function toAccount(row: AccountRow): Account {
   return {
@@ -26,10 +31,12 @@ function toAccount(row: AccountRow): Account {
 
 export class AccountService {
   private accountRepo: AccountRepo;
+  private settingsRepo: SettingsRepo;
 
   constructor() {
     DataLayer.getInstance();
     this.accountRepo = new AccountRepo();
+    this.settingsRepo = new SettingsRepo();
   }
 
   findByUin(uin: string): Account | undefined {
@@ -54,7 +61,41 @@ export class AccountService {
     return this.accountRepo.update(id, { cookies });
   }
 
+  updateProfile(id: number, data: { nickname?: string; cookies?: string }): boolean {
+    return this.accountRepo.update(id, data);
+  }
+
   delete(id: number): boolean {
     return this.accountRepo.deleteById(id);
+  }
+
+  list(): PublicAccount[] {
+    return this.findAll().map((a) => this.toPublic(a));
+  }
+
+  toPublic(account: Account): PublicAccount {
+    return {
+      id: account.id,
+      uin: account.uin,
+      nickname: account.nickname,
+      status: account.status,
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
+    };
+  }
+
+  switch(id: number): boolean {
+    if (!this.findById(id)) return false;
+    this.settingsRepo.set(ACTIVE_ACCOUNT_KEY, String(id));
+    return true;
+  }
+
+  getActiveAccountId(): number | null {
+    const value = this.settingsRepo.get(ACTIVE_ACCOUNT_KEY);
+    return value ? parseInt(value, 10) : null;
+  }
+
+  getCookies(id: number): string | undefined {
+    return this.findById(id)?.cookies;
   }
 }
