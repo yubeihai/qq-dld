@@ -2,6 +2,8 @@
 comet_change: frontend-vue3-vant
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-09-frontend-vue3-vant
+status: final
 ---
 
 # Frontend Vue3 + Vant4 — Technical Design
@@ -28,3 +30,4 @@ Vant Tabbar (bottom navigation) with 4 items.
 - Vue Router with 4 routes
 - App.vue: Tabbar + router-view
 - API client: axios with baseURL = http://localhost:3001
+

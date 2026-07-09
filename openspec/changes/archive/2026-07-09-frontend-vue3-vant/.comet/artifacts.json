@@ -4,5 +4,6 @@
   "openspec_tasks": "openspec/changes/frontend-vue3-vant/tasks.md",
   "openspec_delta_spec": "openspec/changes/frontend-vue3-vant/specs/frontend-pages/spec.md",
   "handoff_context": "openspec/changes/frontend-vue3-vant/.comet/handoff/design-context.json",
-  "handoff_markdown": "openspec/changes/frontend-vue3-vant/.comet/handoff/design-context.md"
+  "handoff_markdown": "openspec/changes/frontend-vue3-vant/.comet/handoff/design-context.md",
+  "archive_directory": "openspec/changes/archive/2026-07-09-frontend-vue3-vant"
 }
