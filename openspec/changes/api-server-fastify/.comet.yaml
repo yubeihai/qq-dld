@@ -1,6 +1,6 @@
 workflow: full
 language: en
-phase: design
+phase: build
 context_compression: off
 build_mode: null
 build_pause: null
@@ -11,7 +11,7 @@ isolation: null
 verify_mode: null
 auto_transition: true
 base_ref: 723c0a4e21dffb200948d1e96d8fb0e896fbfd9f
-design_doc: null
+design_doc: docs/superpowers/specs/2026-07-09-api-server-fastify-design.md
 plan: null
 verify_result: pending
 verification_report: null
