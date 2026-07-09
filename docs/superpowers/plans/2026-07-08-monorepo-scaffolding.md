@@ -2,6 +2,7 @@
 change: monorepo-scaffolding
 design-doc: docs/superpowers/specs/2026-07-08-monorepo-scaffolding-design.md
 base-ref: 0f5e5c9ec9c65560be6b30f4c5d6b6810f253519
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 # Implementation Plan: monorepo-scaffolding
@@ -48,6 +49,7 @@ Group 6 (root scripts + cross-package verification)← needs 3,4,5 done
 
 Group 3 and 5 are independent and could be done in parallel; Group 4 depends on shared types being resolvable (project references make this work at typecheck time even before `shared/dist` is built, but `server` runtime build requires `shared/dist` to exist — so build shared first, or rely on `tsc --build` to transitively build shared).
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 1 — Root workspace configuration
@@ -152,6 +154,7 @@ Placeholder files to create now:
 - `packages/server/package.json` → `{ "name": "@qq-dld/server", "version": "0.0.0", "private": true }`
 - `packages/web/package.json` → `{ "name": "@qq-dld/web", "version": "0.0.0", "private": true }`
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 2 — TypeScript configuration hierarchy
@@ -307,6 +310,7 @@ npx tsc --showConfig -p packages/web/tsconfig.json
 
 Do NOT run `npx tsc --build` yet (will fail on empty src). Defer to Group 3.4.
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 3 — `packages/shared` skeleton
@@ -476,6 +480,7 @@ Reset incremental cache for clean re-runs if needed:
 Remove-Item -Recurse -Force packages\shared\dist,packages\shared\tsconfig.tsbuildinfo -ErrorAction SilentlyContinue
 ```
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 4 — `packages/server` skeleton
@@ -558,6 +563,7 @@ node packages\server\dist\index.js
 ```
 **Expected:** logs `[qq-dld/server] skeleton ready sample` and exits 0. Confirms CJS output runs in Node (spec scenario "Server emits CommonJS").
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 5 — `packages/web` skeleton
@@ -743,6 +749,7 @@ declare module '*.css';
 ```
 *Reactive: add this file ONLY if the verify step errors on missing module declarations.*
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## Group 6 — Cross-package orchestration + verification
@@ -811,6 +818,7 @@ npm install
 ```
 This restores the single-package legacy state. (From design §5.) Per 6.2.11, the rollback touches only additive artifacts — `src/`, `public/`, `data/`, `stop.js` are unchanged by this change, so rollback never affects the legacy app.
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## 7. Files created / modified summary
@@ -859,6 +867,7 @@ This restores the single-package legacy state. (From design §5.) Per 6.2.11, th
 - existing root `scripts.start`, `scripts.stop`, `scripts.dev`
 - existing root `devDependencies.@playwright/test`
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## 8. Risks / gotchas register (Windows-specific)
@@ -874,6 +883,7 @@ This restores the single-package legacy state. (From design §5.) Per 6.2.11, th
 | Legacy app's `main: src/web/index.js` collides with npm workspace behavior | root `main` field is informational-only for workspace roots; legacy `npm start` reads `scripts.start`, not `main`. No conflict. |
 | `npm run build --workspaces` runs shared after server if order isn't respected | The `workspaces` array IS order-sensitive and npm respects it (Group 1.1 puts shared first). Plus `server/tsconfig.json#references` forces shared-before-server at the tsc level regardless. Belt and suspenders. |
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## 9. Estimated effort & ordering
@@ -889,6 +899,7 @@ This restores the single-package legacy state. (From design §5.) Per 6.2.11, th
 
 Total: ~23 file operations + `npm install` + verification runs. A developer following this plan straight through should complete it in one sitting (~1-2 hours including verification iterations).
 
+archived-with: 2026-07-09-monorepo-scaffolding
 ---
 
 ## 10. Post-change checklist (acceptance)

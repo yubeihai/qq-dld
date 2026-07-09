@@ -2,6 +2,8 @@
 comet_change: monorepo-scaffolding
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-09-monorepo-scaffolding
+status: final
 ---
 
 # Technical Design: monorepo-scaffolding
@@ -132,3 +134,4 @@ No unit tests — scaffolding is pure infrastructure. Verification is build-time
 
 - **Lint tooling** (ESLint/Prettier): deferred to a later change. Not needed for scaffolding.
 - **Concurrently** for `dev:workspaces`: may need `concurrently` as root devDep, or use `npm run dev --workspaces` (runs sequentially). Decide during build.
+
