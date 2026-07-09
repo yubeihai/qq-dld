@@ -5,7 +5,7 @@ const accountService = new AccountService();
 
 export const accountRoutes: FastifyPluginAsync = async (server) => {
   server.get('/api/accounts', async (_request, reply) => {
-    const accounts = accountService.findAll();
+    const accounts = accountService.list();
     reply.send({ accounts });
   });
 

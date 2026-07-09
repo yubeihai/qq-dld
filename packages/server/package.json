@@ -14,12 +14,12 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b",
-    "test": "node --import tsx --test src/data/__tests__/data-layer.test.ts"
+    "start": "tsx src/server.ts",
+    "test": "node --import tsx --test src/**/__tests__/*.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
     "@fastify/formbody": "^8.0.2",
-    "@fastify/jwt": "^10.2.0",
     "@qq-dld/shared": "*",
     "@sinclair/typebox": "^0.34.50",
     "@types/jsonwebtoken": "^9.0.10",
@@ -29,7 +29,6 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
-    "@types/express": "^5.0.6",
     "@types/node": "^20.12.7",
     "tsx": "^4.16.0"
   }

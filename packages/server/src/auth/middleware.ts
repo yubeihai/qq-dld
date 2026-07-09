@@ -1,6 +1,12 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, type TokenPayload } from './auth-module';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: object;
+  }
+}
+
 export async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const header = request.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {

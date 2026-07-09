@@ -1,57 +1,112 @@
-import { Router, type Request, type Response } from 'express';
+import { FastifyPluginAsync } from 'fastify';
 import { signToken } from './auth-module';
 import { AccountService } from './account-service';
+import { QrSessionManager } from './qr-session-manager';
+import { QqLoginClient } from './qq-login-client';
 
-export function createAccountRoutes(): Router {
-  const router = Router();
-  const accountService = new AccountService();
+const sessionManager = new QrSessionManager();
+const qqClient = new QqLoginClient();
+const accountService = new AccountService();
 
-  router.post('/login', (req: Request, res: Response) => {
-    const { uin } = req.body || {};
-    if (!uin) {
-      res.status(400).json({ error: 'uin is required' });
+export const authRoutes: FastifyPluginAsync = async (server) => {
+  server.post('/api/auth/qr/start', async (_request, reply) => {
+    try {
+      const cookieJar = new Map<string, string>();
+      const { qrImage, qrsig } = await qqClient.getQrCode(cookieJar);
+      const session = sessionManager.create(qrsig, cookieJar);
+      reply.send({ sessionId: session.id, qrImage });
+    } catch (error) {
+      reply
+        .status(502)
+        .send({ error: 'Failed to fetch QR code', detail: String(error) });
+    }
+  });
+
+  server.get('/api/auth/qr/status', async (request, reply) => {
+    const { id } = request.query as { id?: string };
+    if (!id) {
+      reply.status(400).send({ error: 'id is required' });
       return;
     }
-    let account = accountService.findByUin(uin);
-    if (!account) {
-      account = accountService.create({ uin });
-    }
-    const token = signToken({ accountId: account.id, uin: account.uin });
-    res.json({ token, account });
-  });
-
-  router.post('/logout', (_req: Request, res: Response) => {
-    res.json({ success: true });
-  });
-
-  router.get('/status', (_req: Request, res: Response) => {
-    res.json({ loggedIn: true });
-  });
-
-  router.get('/', (_req: Request, res: Response) => {
-    const accounts = accountService.findAll();
-    res.json({ accounts });
-  });
-
-  router.post('/', (req: Request, res: Response) => {
-    const { uin, nickname, cookies } = req.body || {};
-    if (!uin) {
-      res.status(400).json({ error: 'uin is required' });
+    const session = sessionManager.get(id);
+    if (!session) {
+      reply.status(404).send({ error: 'Session not found' });
       return;
     }
-    const account = accountService.create({ uin, nickname, cookies });
-    res.status(201).json({ account });
-  });
-
-  router.delete('/:id', (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string, 10);
-    const deleted = accountService.delete(id);
-    if (!deleted) {
-      res.status(404).json({ error: 'Account not found' });
+    if (session.status === 'expired' || sessionManager.isExpired(session)) {
+      sessionManager.updateStatus(id, 'expired');
+      reply.send({ status: 'expired' });
       return;
     }
-    res.json({ success: true });
+    if (session.status === 'success') {
+      reply.send({ status: 'success' });
+      return;
+    }
+
+    try {
+      const result = await qqClient.checkStatus(session.cookieJar, session.ptqrtoken);
+
+      if (result.code === 66) {
+        reply.send({ status: 'waiting' });
+        return;
+      }
+      if (result.code === 67) {
+        sessionManager.updateStatus(id, 'scanned');
+        reply.send({ status: 'scanned' });
+        return;
+      }
+      if (result.code === 65) {
+        sessionManager.updateStatus(id, 'expired');
+        reply.send({ status: 'expired' });
+        return;
+      }
+
+      if (result.code === 0 && result.callbackUrl) {
+        const login = await qqClient.completeLogin(
+          result.callbackUrl,
+          session.cookieJar,
+          result.nickname,
+        );
+
+        let account = accountService.findByUin(login.uin);
+        if (account) {
+          accountService.updateProfile(account.id, {
+            cookies: login.cookieString,
+            nickname: login.nickname,
+          });
+          account = accountService.findById(account.id);
+        } else {
+          account = accountService.create({
+            uin: login.uin,
+            nickname: login.nickname,
+            cookies: login.cookieString,
+          });
+        }
+        if (!account) {
+          reply.status(500).send({ error: 'Account persistence failed' });
+          return;
+        }
+
+        const token = signToken({ accountId: account.id, uin: account.uin });
+        accountService.switch(account.id);
+        sessionManager.updateStatus(id, 'success', {
+          uin: login.uin,
+          nickname: login.nickname,
+        });
+
+        reply.send({ status: 'success', token, account: accountService.toPublic(account) });
+        return;
+      }
+
+      reply.send({ status: 'waiting' });
+    } catch (error) {
+      reply
+        .status(502)
+        .send({ error: 'Status check failed', detail: String(error) });
+    }
   });
 
-  return router;
-}
+  server.post('/api/auth/logout', async (_request, reply) => {
+    reply.send({ success: true });
+  });
+};

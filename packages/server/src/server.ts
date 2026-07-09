@@ -1,8 +1,8 @@
 import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import formbody from '@fastify/formbody';
-import jwt from '@fastify/jwt';
-import { authRoutes } from './routes/auth';
+import { authPreHandler } from './auth/middleware';
+import { authRoutes } from './auth/routes';
 import { statusRoutes } from './routes/status';
 import { accountRoutes } from './routes/accounts';
 import { logRoutes } from './routes/logs';
@@ -11,25 +11,30 @@ import { schedulerRoutes } from './routes/scheduler';
 import { settingRoutes } from './routes/settings';
 import { DataLayer } from './data/data-layer';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'qq-dld-dev-secret-for-now';
+const PUBLIC_ROUTES = new Set<string>([
+  '/api/status',
+  '/api/auth/qr/start',
+  '/api/auth/qr/status',
+]);
 
 export async function buildServer(): Promise<FastifyInstance> {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
   DataLayer.initialize();
 
   const server = Fastify({ logger: true });
 
   await server.register(cors, { origin: true });
   await server.register(formbody);
-  await server.register(jwt, { secret: JWT_SECRET });
 
   server.addHook('onRoute', (routeOptions) => {
-    if (routeOptions.url && routeOptions.url !== '/api/status' && routeOptions.url !== '/api/auth/login') {
+    if (routeOptions.url && !PUBLIC_ROUTES.has(routeOptions.url)) {
       const preHandler = routeOptions.preHandler;
-      if (preHandler) {
-        routeOptions.preHandler = Array.isArray(preHandler) ? [authHook, ...preHandler] : [authHook, preHandler];
-      } else {
-        routeOptions.preHandler = [authHook];
-      }
+      routeOptions.preHandler = Array.isArray(preHandler)
+        ? [authPreHandler, ...preHandler]
+        : [authPreHandler];
     }
   });
 
@@ -59,10 +64,9 @@ export async function startServer(): Promise<FastifyInstance> {
   return server;
 }
 
-async function authHook(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  try {
-    await request.jwtVerify();
-  } catch {
-    reply.status(401).send({ error: 'Unauthorized' });
-  }
+if (require.main === module) {
+  startServer().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
