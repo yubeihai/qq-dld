@@ -10,14 +10,16 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue": "^3.4.21",
+    "@qq-dld/shared": "*",
+    "axios": "^1.18.1",
     "vant": "^4.8.1",
-    "@qq-dld/shared": "*"
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
+    "typescript": "^5.4.5",
     "vite": "^5.2.8",
-    "vue-tsc": "^2.0.11",
-    "typescript": "^5.4.5"
+    "vue-tsc": "^2.0.11"
   }
 }

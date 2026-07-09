@@ -1,0 +1,14 @@
+{
+  "change": "frontend-vue3-vant",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "abc447880ab50247d435b26d385cb5a5b776cb65324bafc44a0390ca4c6ced93",
+  "files": [
+    { "path": "openspec/changes/frontend-vue3-vant/proposal.md", "sha256": "07f7b9c9ecfe9016db6bd0a13dc2dfbf77cc28432f3dc2cf8162a54d0bd34404" },
+    { "path": "openspec/changes/frontend-vue3-vant/design.md", "sha256": "7427651754938ae906247a1b804219ae7f5654877fe89f9ec1e32761d81ccef2" },
+    { "path": "openspec/changes/frontend-vue3-vant/tasks.md", "sha256": "e695f43eec03724a524e0367d4740c3b53ac30df3366f9683d3f69fde026cc18" },
+    { "path": "openspec/changes/frontend-vue3-vant/specs/frontend-pages/spec.md", "sha256": "2251ae916204db596e0f7a44e6e0f881c84cc222c6d429ca9751574c21ceb3d6" }
+  ]
+}
