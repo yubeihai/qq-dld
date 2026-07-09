@@ -2,6 +2,8 @@
 comet_change: api-server-fastify
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-09-api-server-fastify
+status: final
 ---
 
 # API Server Fastify Migration
@@ -52,3 +54,4 @@ Server config (port, JWT secret, DB path) from process.env with sensible default
 - Build verification: npm run build (tsc -b)
 - Manual smoke test: start Fastify, verify /api/status returns 200
 - Route tests can be added later when vitest is configured
+

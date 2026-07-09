@@ -1,4 +1,6 @@
-## Requirement: Fastify Server
+## ADDED Requirements
+
+### Requirement: Fastify Server
 
 The project SHALL provide a Fastify v4 HTTP server at `packages/server/src/server.ts` that:
 - Registers @fastify/cors for cross-origin requests
@@ -12,7 +14,6 @@ The project SHALL provide a Fastify v4 HTTP server at `packages/server/src/serve
 - All route handlers MUST have schema validation via TypeBox
 - API responses MUST be structured JSON: `{ success: boolean, data?: any, error?: string }`
 
-### Scenario: Fastify server starts and responds
 #### Scenario: Fastify server responds on port 3001
 Given the server is started
 When a GET /api/status request is sent
