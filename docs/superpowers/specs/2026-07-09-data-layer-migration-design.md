@@ -2,6 +2,8 @@
 comet_change: data-layer-migration
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-09-data-layer-migration
+status: final
 ---
 
 # Data Layer Migration — Technical Design
@@ -85,3 +87,4 @@ Uses better-sqlite3 on old DB file (same SQLite format). Deduplicates cookies by
 - In-memory DB for CRUD roundtrip tests
 - File-based DB for migration idempotency
 - Full cycle test: create schema → run legacy migration → verify row counts
+

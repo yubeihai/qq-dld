@@ -2,6 +2,7 @@
 change: data-layer-migration
 design-doc: docs/superpowers/specs/2026-07-09-data-layer-migration-design.md
 base-ref: 2802e6a752b89c2f1c33c956ab216d16c9c9bd4c
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 # Data Layer Migration Implementation Plan
@@ -16,12 +17,13 @@ base-ref: 2802e6a752b89c2f1c33c956ab216d16c9c9bd4c
 
 ## Global Constraints
 
-- **Module:** tsconfig.base.json sets `"module": "CommonJS"` â€?use `require()`/`module.exports` is NOT required because `esModuleInterop: true` + tsc compiles imports to require calls. Use standard ES `import/export` syntax in .ts files; tsc handles the transform.
-- **Strict TS:** `noUnusedLocals: true`, `noUnusedParameters: true` â€?every import and parameter must be used.
+- **Module:** tsconfig.base.json sets `"module": "CommonJS"` ï¿½?use `require()`/`module.exports` is NOT required because `esModuleInterop: true` + tsc compiles imports to require calls. Use standard ES `import/export` syntax in .ts files; tsc handles the transform.
+- **Strict TS:** `noUnusedLocals: true`, `noUnusedParameters: true` ï¿½?every import and parameter must be used.
 - **No runtime deps on @qq-dld/shared types** (they're compile-time only for type safety).
-- **Windows:** better-sqlite3 uses node-gyp; prebuilt binaries are published for Windows x64 on Node â‰?8, so no build tools needed unless running an older Node. Document `windows-build-tools` fallback in Task 1.
+- **Windows:** better-sqlite3 uses node-gyp; prebuilt binaries are published for Windows x64 on Node ï¿½?8, so no build tools needed unless running an older Node. Document `windows-build-tools` fallback in Task 1.
 - **DB paths are relative** to `packages/server/` unless specified otherwise.
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 1: Dependency Setup
@@ -94,6 +96,7 @@ git add packages/server/package.json packages/server/tsconfig.tsbuildinfo
 git commit -m "feat(server): add better-sqlite3 dependency"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 2: DataLayer Class + Migration System
@@ -355,7 +358,7 @@ cd packages/server
 npx tsc --noEmit
 ```
 
-Expected: no errors. Note: Task 3 repos aren't created yet, so there may be unused exports â€?that's fine since they'll be used later.
+Expected: no errors. Note: Task 3 repos aren't created yet, so there may be unused exports ï¿½?that's fine since they'll be used later.
 
 - [x] **Step 2.7: Quick integration check (manual)**
 
@@ -375,6 +378,7 @@ git add packages/server/src/data/ packages/shared/src/types/settings.ts packages
 git commit -m "feat(server): add DataLayer with migration system and initial schema"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 3: Repository Layer
@@ -674,6 +678,7 @@ git add packages/server/src/data/
 git commit -m "feat(server): add RepositoryBase and 6 typed repositories"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 4: Legacy Data Migration Script
@@ -753,7 +758,7 @@ export function migrateLegacyData(oldDbPath: string): MigrationResult {
       let taskConfigsMigrated = 0;
       let settingsMigrated = 0;
 
-      // Step 1: Migrate cookies â†?accounts
+      // Step 1: Migrate cookies ï¿½?accounts
       const tableNames = oldDb.prepare(
         `SELECT name FROM sqlite_master WHERE type='table'`
       ).all() as { name: string }[];
@@ -782,7 +787,7 @@ export function migrateLegacyData(oldDbPath: string): MigrationResult {
       // Get the migrated account id (or first existing account)
       const account = newDb.prepare('SELECT id FROM accounts ORDER BY id LIMIT 1').get() as { id: number } | undefined;
       if (!account) {
-        // No account at all â€?create a placeholder
+        // No account at all ï¿½?create a placeholder
         newDb.prepare(`
           INSERT INTO accounts (uin, nickname, cookies, status, created_at, updated_at)
           VALUES ('unknown', 'unknown', '', 'active', datetime('now'), datetime('now'))
@@ -882,7 +887,7 @@ export function migrateLegacyData(oldDbPath: string): MigrationResult {
 
 - [x] **Step 4.2: Add legacy migration export to index.ts**
 
-Edit `packages/server/src/data/index.ts` â€?add before the existing content:
+Edit `packages/server/src/data/index.ts` ï¿½?add before the existing content:
 
 ```typescript
 export { migrateLegacyData } from './migrate-legacy';
@@ -955,6 +960,7 @@ git add packages/server/src/data/
 git commit -m "feat(server): add legacy data migration script"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 5: Verification Suite
@@ -1051,7 +1057,7 @@ describe('DataLayer', () => {
   it('should be idempotent on re-init', () => {
     const dl = DataLayer.getInstance();
     const countBefore = (dl.getDb().prepare('SELECT count(*) as cnt FROM _migrations').get() as { cnt: number }).cnt;
-    // Simulate re-init by calling applyMigrations again â€?we can't call private, so just verify
+    // Simulate re-init by calling applyMigrations again ï¿½?we can't call private, so just verify
     // that the migration marker still exists and is correct
     const marker = dl.getDb().prepare(
       'SELECT hash FROM _migrations WHERE filename = ?'
@@ -1223,11 +1229,12 @@ git add packages/server/
 git commit -m "test(server): add vitest test suite for data layer"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ### Task 6: Integration Smoke Test
 
-**Files:** (none â€?manual verification)
+**Files:** (none ï¿½?manual verification)
 
 - [x] **Step 6.1: Full cycle smoke test**
 
@@ -1244,29 +1251,29 @@ const dl = DataLayer.init({
   dbPath: path.join(__dirname, 'data', 'smoke-test.sqlite'),
   migrateOnConnect: true,
 });
-console.log('âœ?DataLayer initialized, migrations applied');
+console.log('ï¿½?DataLayer initialized, migrations applied');
 
 // Verify tables exist
 const db = dl.getDb();
 const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type='table'\").all();
-console.log('âœ?Tables:', tables.map(t => t.name).join(', '));
+console.log('ï¿½?Tables:', tables.map(t => t.name).join(', '));
 
 // Test repos
 const accountRepo = new AccountRepo();
 const a = accountRepo.create({ uin: 'smoke1', nickname: 'Smoke', cookies: '', status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-console.log('âœ?Account created:', a.id, a.uin);
+console.log('ï¿½?Account created:', a.id, a.uin);
 
 const settingsRepo = new SettingsRepo();
 settingsRepo.set(a.id, 'lang', 'zh-CN');
-console.log('âœ?Setting stored');
+console.log('ï¿½?Setting stored');
 
 // Legacy migration (may skip if no old DB)
 const result = migrateLegacyData(path.join(__dirname, '..', '..', 'data', 'database.sqlite'));
-console.log('âœ?Legacy migration:', result.skipped ? 'skipped' : result.accountsCreated + ' accounts');
+console.log('ï¿½?Legacy migration:', result.skipped ? 'skipped' : result.accountsCreated + ' accounts');
 
 // Verify idempotency
 const result2 = migrateLegacyData(path.join(__dirname, '..', '..', 'data', 'database.sqlite'));
-console.log('âœ?Idempotent:', result2.skipped);
+console.log('ï¿½?Idempotent:', result2.skipped);
 
 dl.close();
 DataLayer.resetInstance();
@@ -1283,12 +1290,14 @@ git add -A
 git commit -m "fix(server): smoke test fixes"
 ```
 
+archived-with: 2026-07-09-data-layer-migration
 ---
 
 ## Self-Review Checklist
 
-- [x] Spec coverage: Every requirement from the Design Doc has a task â€?D1 (better-sqlite3) in Task 1, D2 (DataLayer singleton) in Task 2, D3 (migration system) in Task 2, D4 (multi-account schema) in Task 2, D5 (repos) in Task 3, D6 (legacy migration) in Task 4.
+- [x] Spec coverage: Every requirement from the Design Doc has a task ï¿½?D1 (better-sqlite3) in Task 1, D2 (DataLayer singleton) in Task 2, D3 (migration system) in Task 2, D4 (multi-account schema) in Task 2, D5 (repos) in Task 3, D6 (legacy migration) in Task 4.
 - [x] Placeholder scan: No TBD, TODO, or "fill in details" left in the plan. Every code block is complete.
 - [x] Type consistency: `Account` type from `@qq-dld/shared` used in `account-repo.ts`. `ModuleConfig`, `ExecLog`, `Friend`, `TaskConfig` similarly aligned. `Settings` type added to shared in Task 2.2. All method signatures match across tasks.
 - [x] Build verification: `npm run build` (root) and `npm run typecheck` work. vitest runs pass.
 - [x] Windows compatibility: node-gyp note in Task 1. All paths use `path.join`. PowerShell commands documented.
+

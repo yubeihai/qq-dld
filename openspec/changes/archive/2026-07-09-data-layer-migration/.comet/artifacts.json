@@ -4,5 +4,6 @@
   "openspec_tasks": "openspec/changes/data-layer-migration/tasks.md",
   "openspec_delta_spec": "openspec/changes/data-layer-migration/specs/data-layer/spec.md",
   "handoff_context": "openspec/changes/data-layer-migration/.comet/handoff/design-context.json",
-  "handoff_markdown": "openspec/changes/data-layer-migration/.comet/handoff/design-context.md"
+  "handoff_markdown": "openspec/changes/data-layer-migration/.comet/handoff/design-context.md",
+  "archive_directory": "openspec/changes/archive/2026-07-09-data-layer-migration"
 }
