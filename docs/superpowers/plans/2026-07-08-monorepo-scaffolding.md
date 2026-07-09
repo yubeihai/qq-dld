@@ -895,12 +895,12 @@ Total: ~23 file operations + `npm install` + verification runs. A developer foll
 
 Before declaring the change complete, all of the following must pass:
 
-- [ ] `npm install` exits 0 with workspaces recognized
-- [ ] `npm run build` builds all 3 workspaces; `packages/{shared,server,web}/dist/` populated
-- [ ] `npm run typecheck` exits 0 (tsc --build for shared+server; vue-tsc for web)
-- [ ] `node packages\server\dist\index.js` logs the skeleton line
-- [ ] `npm start` launches the legacy app on port 3000 (manual GET returns 200)
-- [ ] `git status` shows ONLY additive artifacts; no `src/`, `public/`, `data/`, `stop.js` modifications
-- [ ] Rollback path (§6.4) verified mentally against the file list in §7
+- [x] `npm install` exits 0 with workspaces recognized
+- [x] `npm run build` builds all 3 workspaces; `packages/{shared,server,web}/dist/` populated
+- [x] `npm run typecheck` exits 0 (tsc --build for shared+server; vue-tsc for web)
+- [x] `node packages\server\dist\index.js` logs the skeleton line
+- [x] `npm start` launches the legacy app on port 3000 (manual GET returns 200)
+- [x] `git status` shows ONLY additive artifacts; no `src/`, `public/`, `data/`, `stop.js` modifications
+- [x] Rollback path (§6.4) verified mentally against the file list in §7
 
 When all boxes are checked, the monorepo scaffold is complete and ready for the next change (which will introduce Fastify + better-sqlite3 + multi-account into `packages/server`).
