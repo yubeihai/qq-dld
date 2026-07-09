@@ -1,6 +1,8 @@
 # 数据库文件（包含 Cookie 和用户数据）
 data/*.sqlite
 data/*.sqlite-journal
+data/*.sqlite-shm
+data/*.sqlite-wal
 data/database.sqlite
 
 # 依赖

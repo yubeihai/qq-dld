@@ -1,9 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
 import { AccountService } from '../auth/account-service';
 
-const accountService = new AccountService();
-
 export const accountRoutes: FastifyPluginAsync = async (server) => {
+  const accountService = new AccountService();
+
   server.get('/api/accounts', async (_request, reply) => {
     const accounts = accountService.list();
     reply.send({ accounts });

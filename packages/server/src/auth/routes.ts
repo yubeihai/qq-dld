@@ -6,9 +6,9 @@ import { QqLoginClient } from './qq-login-client';
 
 const sessionManager = new QrSessionManager();
 const qqClient = new QqLoginClient();
-const accountService = new AccountService();
 
 export const authRoutes: FastifyPluginAsync = async (server) => {
+  const accountService = new AccountService();
   server.post('/api/auth/qr/start', async (_request, reply) => {
     try {
       const cookieJar = new Map<string, string>();
