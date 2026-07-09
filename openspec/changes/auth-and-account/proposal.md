@@ -26,4 +26,4 @@ QQ DLD currently has no auth layer. Multi-account operations rely on manual cook
 - packages/server: new `src/auth/` directory (JWT module + middleware + routes)
 - Data layer: accounts table already exists (change 2); seed/setup logic needed on first init
 - New deps: `jsonwebtoken` + `@types/jsonwebtoken`
-- QR login flow (existing puppeteer-core) will be integrated with auth routes
+- QR login flow: HTTP-based (Scheme A) — backend calls QQ ptlogin2 APIs directly (ptqrshow/ptqrlogin), no browser/puppeteer dependency
