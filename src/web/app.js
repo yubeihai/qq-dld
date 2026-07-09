@@ -15,6 +15,7 @@ function createApp() {
   app.use(express.static(path.join(__dirname, '..', '..', 'public')));
 
   app.use('/api/auth', createAuthRoutes());
+  app.use('/api/accounts', createAuthRoutes());
   app.use('/api/modules', createModuleRoutes());
   app.use('/api/logs', createLogRoutes());
   app.use('/api/tasks', createTaskRoutes());

@@ -1,0 +1,15 @@
+{
+  "change": "auth-and-account",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "b55ee35b41d505c909b1d7f571bbc771524ddf83ec701de99a03ed415792b465",
+  "files": [
+    { "path": "openspec/changes/auth-and-account/proposal.md", "sha256": "8e5a24f071e35686ee190ef07e2fc99f94a69350e218dfbbe9863e15e990f489" },
+    { "path": "openspec/changes/auth-and-account/design.md", "sha256": "34744b598ae49d360bf3b8d858c7554a6be1d1a8ec1d4b410cc51b36bb5047e7" },
+    { "path": "openspec/changes/auth-and-account/tasks.md", "sha256": "88cc1ac0633b0d3084ca627ede4dee617d956333c78c8b1c436c695740ab92cd" },
+    { "path": "openspec/changes/auth-and-account/specs/account-management/spec.md", "sha256": "5dc145dc6c70514f238b90b3df648dcd0a0a2b0490069c365a56f32e9181c902" },
+    { "path": "openspec/changes/auth-and-account/specs/auth-login/spec.md", "sha256": "a4a71f5effa5be839794a1bd428137feb779358853b8dd1c7ff470304c942808" }
+  ]
+}
