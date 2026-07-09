@@ -28,3 +28,11 @@ desktop.ini
 tmp/
 temp/
 .cache/
+
+# TypeScript build output
+packages/*/dist/
+packages/*/tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Vite build output (web)
+packages/web/dist/

@@ -1,0 +1,23 @@
+{
+  "name": "@qq-dld/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "vant": "^4.8.1",
+    "@qq-dld/shared": "*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.8",
+    "vue-tsc": "^2.0.11",
+    "typescript": "^5.4.5"
+  }
+}
