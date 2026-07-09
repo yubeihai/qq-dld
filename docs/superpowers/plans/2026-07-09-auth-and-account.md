@@ -76,7 +76,7 @@ base-ref: e8ec42b8e5d05f39e56b7cc7af2d0085b63386d7
 - Consumes: existing `packages/server/package.json` deps (`jsonwebtoken@^9.0.3`, `@types/jsonwebtoken@^9.0.10` already present)
 - Produces: confirmed dep set; root lockfile refreshed. (Removal of `@fastify/jwt` + `@types/express` is deferred to Task 7, after code stops importing them, so every intermediate task stays green.)
 
-- [ ] **Step 1: Verify jsonwebtoken is present in packages/server**
+- [x] **Step 1: Verify jsonwebtoken is present in packages/server**
 
 Run:
 ```powershell
@@ -84,7 +84,7 @@ node -e "const p=require('./packages/server/package.json');console.log('jsonwebt
 ```
 Expected: `jsonwebtoken: ^9.0.3` and `types: ^9.0.10`. (Task 1.1 of tasks.md is already satisfied — do not re-add.)
 
-- [ ] **Step 2: Confirm puppeteer-core is NOT a packages/server dependency**
+- [x] **Step 2: Confirm puppeteer-core is NOT a packages/server dependency**
 
 Run:
 ```powershell
@@ -92,7 +92,7 @@ node -e "const p=require('./packages/server/package.json');console.log('puppetee
 ```
 Expected: `puppeteer-core in server deps: false`. (It only lives in the legacy root `package.json` — out of scope. Task 1.3 is a no-op for packages/server.)
 
-- [ ] **Step 3: npm install at root to refresh the lockfile**
+- [x] **Step 3: npm install at root to refresh the lockfile**
 
 Run:
 ```powershell
@@ -100,7 +100,7 @@ npm install
 ```
 Expected: install completes; no new packages added. (Task 1.2.)
 
-- [ ] **Step 4: Verify the server workspace still typechecks (baseline green)**
+- [x] **Step 4: Verify the server workspace still typechecks (baseline green)**
 
 Run:
 ```powershell
@@ -108,7 +108,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS (no errors). This is the baseline that every later task must preserve.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add packages/server/package.json package-lock.json
@@ -133,7 +133,7 @@ git commit -m "chore(auth): verify auth dependencies (jsonwebtoken) for QR login
 
 **Design doc reference:** "JWT with jsonwebtoken: symmetric HMAC-SHA256, 24h TTL, secret from JWT_SECRET env"; Risks -> "JWT secret management: env-only, no fallback".
 
-- [ ] **Step 1: Replace auth-module.ts with the env-only version + refresh**
+- [x] **Step 1: Replace auth-module.ts with the env-only version + refresh**
 
 Overwrite `packages/server/src/auth/auth-module.ts`:
 
@@ -172,7 +172,7 @@ export function refreshToken(token: string): string {
 
 Key changes vs. current: removed `DEFAULT_SECRET` fallback (env-only now per design), added `refreshToken`, made `expiresIn` configurable with a default.
 
-- [ ] **Step 2: Typecheck the server workspace**
+- [x] **Step 2: Typecheck the server workspace**
 
 Run:
 ```powershell
@@ -180,7 +180,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS. (`auth/index.ts` still exports `createAccountRoutes` from `./routes` and `authMiddleware` from `./middleware`; those files still exist in their old forms, so the build stays green. They are rewritten in later tasks.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add packages/server/src/auth/auth-module.ts
@@ -204,7 +204,7 @@ git commit -m "feat(auth): env-only JWT secret + refreshToken in AuthModule"
 
 **Design doc reference:** "AuthMiddleware ... migrates to Fastify preHandler". The runtime is Fastify (`server.ts`), so implement it natively as a Fastify preHandler (not Express). Spec (`auth-login/spec.md`): "extracts and validates the JWT from the Authorization header (Bearer scheme), attaching the decoded payload to `req.user`"; 401 on missing/invalid token.
 
-- [ ] **Step 1: Rewrite middleware.ts as a Fastify preHandler**
+- [x] **Step 1: Rewrite middleware.ts as a Fastify preHandler**
 
 Overwrite `packages/server/src/auth/middleware.ts`:
 
@@ -235,7 +235,7 @@ export async function authPreHandler(request: FastifyRequest, reply: FastifyRepl
 
 Note: In a Fastify 4 async preHandler, calling `reply.send(...)` and `return` halts the request lifecycle (no `next` callback needed).
 
-- [ ] **Step 2: Update the auth barrel export**
+- [x] **Step 2: Update the auth barrel export**
 
 Edit `packages/server/src/auth/index.ts` — replace `authMiddleware` with `authPreHandler` (keep `createAccountRoutes` for now; it is fixed in Task 7):
 
@@ -247,14 +247,14 @@ export { AccountService } from './account-service';
 export { createAccountRoutes } from './routes';
 ```
 
-- [ ] **Step 3: Temporarily align auth/routes.ts so the build compiles**
+- [x] **Step 3: Temporarily align auth/routes.ts so the build compiles**
 
 The existing `packages/server/src/auth/routes.ts` imports `{ authMiddleware }` from `./middleware` (now removed) and `{ Router, Request, Response }` from `express`. Since this task removed `authMiddleware`, the build would break. Patch `routes.ts` minimally now (the body is fully rewritten in Task 7):
 
 - Remove the line `import { authMiddleware } from './middleware';` entirely.
 - Remove every `authMiddleware,` argument from the `router.post('/logout', ...)`, `router.get('/status', ...)`, `router.get('/', ...)`, `router.post('/', ...)`, and `router.delete('/:id', ...)` calls (leave the Express handlers unguarded — this is dead code replaced in Task 7).
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run:
 ```powershell
@@ -262,7 +262,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add packages/server/src/auth/middleware.ts packages/server/src/auth/index.ts packages/server/src/auth/routes.ts
@@ -289,7 +289,7 @@ git commit -m "refactor(auth): rewrite auth middleware as Fastify preHandler (au
 
 **Design doc reference:** "AccountService wraps AccountRepo with add/list/remove/switch methods"; "switch-account updates a current-account-id in settings table; CookieManager reads from there". Spec (`account-management/spec.md`): Add (status 'active'), List (exclude cookies), Remove (CASCADE), Store/Retrieve cookies, Switch active account.
 
-- [ ] **Step 1: Add SettingsRepo + new methods to AccountService**
+- [x] **Step 1: Add SettingsRepo + new methods to AccountService**
 
 Overwrite `packages/server/src/auth/account-service.ts`:
 
@@ -402,7 +402,7 @@ Notes:
 - `switch` writes `current_account_id` into the `settings` table (accountId = null, i.e. global setting). `CookieManager` (Task 8) reads the same key.
 - `delete` -> `accountRepo.deleteById` -> schema `ON DELETE CASCADE` removes module_configs/exec_logs/friends/task_configs/settings for that account (spec: "account and all associated data ... deleted (CASCADE)").
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run:
 ```powershell
@@ -410,7 +410,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add packages/server/src/auth/account-service.ts
@@ -440,7 +440,7 @@ git commit -m "feat(auth): AccountService list/switch/cookies + settings-backed 
 
 **Design doc reference:** "QQ Login Client" table; hash33 code; ptqrshow key params; ptqrlogin status codes 66/67/65/0; Login success chain (5 steps); Account Identification (uin from `uin`/`pt2gguin`, strip `o`). Risks: API is undocumented/reverse-engineered; multi-domain Set-Cookie handling.
 
-- [ ] **Step 1: Create qq-login-client.ts**
+- [x] **Step 1: Create qq-login-client.ts**
 
 Create `packages/server/src/auth/qq-login-client.ts`:
 
@@ -606,7 +606,7 @@ Key technical details encoded (per design doc):
 - uin from `uin` or `pt2gguin` cookie, stripping the leading `o`.
 - Set-Cookie parsing via undici `headers.getSetCookie()` (Node 20), with a typed structural cast (no `any`).
 
-- [ ] **Step 2: Create the unit test for hash33 and parsePtuiCB**
+- [x] **Step 2: Create the unit test for hash33 and parsePtuiCB**
 
 Create `packages/server/src/auth/__tests__/qq-login-client.test.ts`:
 
@@ -643,7 +643,7 @@ test('parsePtuiCB returns only the code for non-success statuses', () => {
 });
 ```
 
-- [ ] **Step 3: Run the unit test**
+- [x] **Step 3: Run the unit test**
 
 Run:
 ```powershell
@@ -651,7 +651,7 @@ node --import tsx --test packages/server/src/auth/__tests__/qq-login-client.test
 ```
 Expected: 3 tests PASS.
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run:
 ```powershell
@@ -659,7 +659,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add packages/server/src/auth/qq-login-client.ts packages/server/src/auth/__tests__/qq-login-client.test.ts
@@ -687,7 +687,7 @@ git commit -m "feat(auth): QQ ptlogin2 HTTP client (hash33, ptqrshow, ptqrlogin,
 
 **Design doc reference:** "QrSessionManager" — in-memory `Map<sessionId, QrSession>`; the `QrSession` interface (id, qrsig, ptqrtoken, cookieJar, createdAt, status, uin?, nickname?); "Session timeout: 2 minutes ... Expired sessions cleaned up periodically."
 
-- [ ] **Step 1: Create qr-session-manager.ts**
+- [x] **Step 1: Create qr-session-manager.ts**
 
 Create `packages/server/src/auth/qr-session-manager.ts`:
 
@@ -778,7 +778,7 @@ export class QrSessionManager {
 
 Notes: `create` takes the `cookieJar` already populated by `getQrCode` (Task 7 wires the order) and derives `ptqrtoken` via `hash33(qrsig)`. The cleanup interval is `unref()`-ed so it never keeps the process alive.
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run:
 ```powershell
@@ -786,7 +786,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add packages/server/src/auth/qr-session-manager.ts
@@ -817,7 +817,7 @@ git commit -m "feat(auth): QrSessionManager with 2-min TTL and periodic cleanup"
 
 **Design doc reference:** Data flow diagram (Frontend -> `/qr/start` -> ptqrshow -> `{sessionId, qrImage}`; `/qr/status` poll -> ptqrlogin -> status; success -> OAuth chain -> game cookies -> uin -> JWT -> `{token, account}`); Account Identification (findByUin -> updateCookies or create; sign JWT `{accountId, uin}`).
 
-- [ ] **Step 1: Rewrite auth/routes.ts as a Fastify plugin**
+- [x] **Step 1: Rewrite auth/routes.ts as a Fastify plugin**
 
 Overwrite `packages/server/src/auth/routes.ts`:
 
@@ -946,7 +946,7 @@ Notes on the login-success flow (spec scenario "Login Success"):
 5. `accountService.switch(account.id)` -> sets active account.
 6. Returns `{ status: 'success', token, account: PublicAccount }` (cookies stripped via `toPublic`).
 
-- [ ] **Step 2: Update the auth barrel export**
+- [x] **Step 2: Update the auth barrel export**
 
 Edit `packages/server/src/auth/index.ts` — replace the `createAccountRoutes` line with the new `authRoutes` export:
 
@@ -959,7 +959,7 @@ export type { PublicAccount } from './account-service';
 export { authRoutes } from './routes';
 ```
 
-- [ ] **Step 3: Sanitize the GET /api/accounts list**
+- [x] **Step 3: Sanitize the GET /api/accounts list**
 
 Edit `packages/server/src/routes/accounts.ts` — change the GET handler to return `accountService.list()` (cookies stripped) instead of `findAll()`:
 
@@ -979,14 +979,14 @@ with:
 ```
 (Leave the POST and DELETE handlers as-is — they are auth-guarded by the global hook and already satisfy the Add/Remove scenarios. POST creates with status defaulting to `'active'` via the schema; DELETE cascades.)
 
-- [ ] **Step 4: Delete the old uin-based auth route**
+- [x] **Step 4: Delete the old uin-based auth route**
 
 Run:
 ```powershell
 git rm packages/server/src/routes/auth.ts
 ```
 
-- [ ] **Step 5: Rewire server.ts**
+- [x] **Step 5: Rewire server.ts**
 
 Overwrite `packages/server/src/server.ts`:
 
@@ -1071,7 +1071,7 @@ Key changes vs. current `server.ts`:
 - `import { authRoutes } from './auth/routes'` (the new QR plugin) instead of the deleted `./routes/auth`.
 - Added the startup `JWT_SECRET` guard (env-only, no fallback — design doc risk note) and a `require.main === module` bootstrap so the server can be started directly.
 
-- [ ] **Step 6: Add a start script to packages/server/package.json**
+- [x] **Step 6: Add a start script to packages/server/package.json**
 
 Edit `packages/server/package.json` — add a `start` script to the `scripts` block (after `typecheck`):
 
@@ -1081,7 +1081,7 @@ Edit `packages/server/package.json` — add a `start` script to the `scripts` bl
     "test": "node --import tsx --test src/data/__tests__/data-layer.test.ts"
 ```
 
-- [ ] **Step 7: Remove now-unused deps (@fastify/jwt + @types/express)**
+- [x] **Step 7: Remove now-unused deps (@fastify/jwt + @types/express)**
 
 After Step 5, no file imports `@fastify/jwt` or `express`/`@types/express`. Edit `packages/server/package.json`:
 - From `dependencies`, remove the `"@fastify/jwt": "^10.2.0",` line.
@@ -1092,7 +1092,7 @@ Then refresh the lockfile:
 npm install
 ```
 
-- [ ] **Step 8: Verify no lingering importers of the removed modules/routes**
+- [x] **Step 8: Verify no lingering importers of the removed modules/routes**
 
 Run:
 ```powershell
@@ -1106,7 +1106,7 @@ Also grep to confirm nothing else imported the deleted route or removed symbols 
 - `@fastify/jwt` over `packages/server/src/**/*.ts` — expect no matches.
 - `from 'express'` over `packages/server/src/**/*.ts` — expect no matches.
 
-- [ ] **Step 9: Build the whole monorepo to confirm everything compiles**
+- [x] **Step 9: Build the whole monorepo to confirm everything compiles**
 
 Run:
 ```powershell
@@ -1114,7 +1114,7 @@ npm run build
 ```
 Expected: PASS (shared -> server -> web all build).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```powershell
 git add packages/server/src/auth/routes.ts packages/server/src/auth/index.ts packages/server/src/routes/accounts.ts packages/server/src/server.ts packages/server/package.json package-lock.json
@@ -1139,7 +1139,7 @@ git commit -m "feat(auth): QR login routes (qr/start, qr/status, logout) + Fasti
 
 **Design doc reference:** "Cookie isolation: cookies stored in accounts table; switch-account updates a current-account-id in settings table; CookieManager reads from there". Spec (`account-management/spec.md`): "Switch Active Account" -> active id persisted; "the selected account's cookies are used for game API requests".
 
-- [ ] **Step 1: Extend CookieManager with active-account support**
+- [x] **Step 1: Extend CookieManager with active-account support**
 
 Overwrite `packages/server/src/gateway/cookie-manager.ts`:
 
@@ -1200,7 +1200,7 @@ Notes:
 - `switchAccount` and `AccountService.switch` (Task 4) write the same `current_account_id` settings key; either may be used to change the active account. The QR login success flow (Task 7) already calls `accountService.switch`, so a freshly logged-in account becomes the active one automatically.
 - **Injection contract (task 8.2):** the game request layer (the TS game client migrated in change 4) consumes `cookieManager.getActiveCookies()` / `getCookieHeader()` to populate the `Cookie` header on every game API call. The legacy CommonJS `src/gateway/game-client.js` is out of scope. This task delivers the CookieManager API that the request layer will call; no TS game client exists in `packages/server` yet, so there is no call-site to wire here.
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run:
 ```powershell
@@ -1208,7 +1208,7 @@ npm run typecheck --workspace=@qq-dld/server
 ```
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add packages/server/src/gateway/cookie-manager.ts
@@ -1228,7 +1228,7 @@ git commit -m "feat(auth): CookieManager active-account switching + cookie heade
 
 **Design doc reference:** "Frontend (Login.vue)" — Enter page -> auto-call `/qr/start` -> display QR; poll `/qr/status` (2s); status mapping (waiting -> "请用QQ扫码" / scanned -> "请在手机确认登录" / success -> store token+account, redirect to `/modules` / expired -> refresh button).
 
-- [ ] **Step 1: Rewrite Login.vue**
+- [x] **Step 1: Rewrite Login.vue**
 
 Overwrite `packages/web/src/pages/Login.vue`:
 
@@ -1317,7 +1317,7 @@ Notes:
 - The `expired` status stops polling and reveals a "刷新二维码" button that re-runs `startQrLogin` (a fresh `qrsig`/session).
 - Polling interval is cleared `onUnmounted` to avoid leaks.
 
-- [ ] **Step 2: Typecheck + build the web workspace**
+- [x] **Step 2: Typecheck + build the web workspace**
 
 Run:
 ```powershell
@@ -1325,7 +1325,7 @@ npm run build --workspace=@qq-dld/web
 ```
 Expected: PASS (vue-tsc + vite build). If the workspace has a separate `typecheck` script, run that too.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add packages/web/src/pages/Login.vue
@@ -1340,7 +1340,7 @@ git commit -m "feat(web): QR login page with auto-start, 2s polling, and expired
 
 **Design doc reference:** "Acceptance Verification" checklist.
 
-- [ ] **Step 1: tsc --build passes (server)**
+- [x] **Step 1: tsc --build passes (server)**
 
 Run:
 ```powershell
@@ -1348,7 +1348,7 @@ npm run build --workspace=@qq-dld/server
 ```
 Expected: PASS (tasks.md 10.1).
 
-- [ ] **Step 2: npm run build passes (all workspaces)**
+- [x] **Step 2: npm run build passes (all workspaces)**
 
 Run:
 ```powershell
@@ -1356,7 +1356,7 @@ npm run build
 ```
 Expected: PASS — shared, server, web all build (tasks.md 10.2).
 
-- [ ] **Step 3: npm run typecheck passes**
+- [x] **Step 3: npm run typecheck passes**
 
 Run:
 ```powershell
@@ -1364,7 +1364,7 @@ npm run typecheck
 ```
 Expected: PASS (tasks.md 10.3).
 
-- [ ] **Step 4: Start the server with JWT_SECRET set**
+- [x] **Step 4: Start the server with JWT_SECRET set**
 
 Run (PowerShell):
 ```powershell
@@ -1373,7 +1373,7 @@ npm run start --workspace=@qq-dld/server
 ```
 Expected: console prints `Fastify server listening on port 3001`. (If port 3001 is in use, set `$env:PORT="3099"` first.) Keep this running for Steps 5-7.
 
-- [ ] **Step 5: Verify POST /api/auth/qr/start returns a QR image**
+- [x] **Step 5: Verify POST /api/auth/qr/start returns a QR image**
 
 In a second terminal:
 ```powershell
@@ -1383,14 +1383,14 @@ $resp.qrImage    # starts with "data:image/png;base64,"
 ```
 Expected: a `sessionId` (UUID) and a `qrImage` data URI containing a valid base64 PNG (design doc acceptance #1). Save the `sessionId` for Step 6.
 
-- [ ] **Step 6: Verify GET /api/auth/qr/status returns waiting/scanned/expired**
+- [x] **Step 6: Verify GET /api/auth/qr/status returns waiting/scanned/expired**
 
 ```powershell
 Invoke-RestMethod -Method Get -Uri "http://localhost:3001/api/auth/qr/status?id=$($resp.sessionId)"
 ```
 Expected (before scanning): `{ status: "waiting" }`. After scanning with a QQ mobile app: `{ status: "scanned" }`. After confirming on mobile: `{ status: "success", token: "...", account: {...} }` — the `account` object has NO `cookies` field (design doc acceptance #2, #3; spec "Login Success").
 
-- [ ] **Step 7: Verify a protected route requires the Bearer token**
+- [x] **Step 7: Verify a protected route requires the Bearer token**
 
 Without a token:
 ```powershell
@@ -1405,7 +1405,7 @@ Invoke-RestMethod -Method Get -Uri http://localhost:3001/api/accounts -Headers $
 ```
 Expected: `200` with `{ accounts: [...] }`; each account object has NO `cookies` field (spec "Protected Route Access" + "List Accounts" excludes cookies; design doc acceptance #5, #6, #7).
 
-- [ ] **Step 8: Verify same-QQ re-scan updates the existing account (no duplicate)**
+- [x] **Step 8: Verify same-QQ re-scan updates the existing account (no duplicate)**
 
 Scan the same QQ number a second time (new `/qr/start` + scan + confirm), then:
 ```powershell
@@ -1413,7 +1413,7 @@ Invoke-RestMethod -Method Get -Uri http://localhost:3001/api/accounts -Headers $
 ```
 Expected: the count of accounts with that `uin` is still **1** (cookies/nickname updated, not duplicated) — design doc acceptance #4; spec "Existing Account Re-login".
 
-- [ ] **Step 9: Verify account add/list/remove via API**
+- [x] **Step 9: Verify account add/list/remove via API**
 
 ```powershell
 # add (admin) — uses POST /api/accounts
@@ -1425,7 +1425,7 @@ Invoke-RestMethod -Method Delete -Uri "http://localhost:3001/api/accounts/$($cre
 ```
 Expected: add returns `201` with `account.status === 'active'`; list excludes cookies; remove returns `{ success: true }` and the account is gone (spec Add/List/Remove scenarios; design doc acceptance #7).
 
-- [ ] **Step 10: Verify cookie switch between accounts works**
+- [x] **Step 10: Verify cookie switch between accounts works**
 
 Using two accounts (A and B) created via QR login, call the switch flow. Since there is no TS game client yet, verify at the data layer:
 ```powershell
@@ -1435,7 +1435,7 @@ Invoke-RestMethod -Method Get -Uri http://localhost:3001/api/settings -Headers $
 ```
 Expected: the `settings` table contains a row `key=current_account_id` with the value of the last-logged-in account's id (spec "Switch Active Account"). The `CookieManager.getActiveAccountId()` reads this same row (Task 8).
 
-- [ ] **Step 11: Stop the server and commit any remaining verification artifacts**
+- [x] **Step 11: Stop the server and commit any remaining verification artifacts**
 
 Stop the server (Ctrl+C in its terminal). No code changes in this task, so there is nothing to commit unless verification surfaced a fix — in that case, make a focused commit with `fix(auth): ...`.
 
