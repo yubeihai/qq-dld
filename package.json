@@ -10,9 +10,9 @@
     "packages/web"
   ],
   "scripts": {
-    "start": "concurrently -k -n \"API,WEB\" -c \"cyan,green\" \"npm run start --workspace=@qq-dld/server\" \"npm run dev --workspace=@qq-dld/web\"",
+    "start": "concurrently -k -n \"API,WEB\" -c \"cyan,green\" \"cross-env JWT_SECRET=dev-secret-do-not-use-in-prod npm run start --workspace=@qq-dld/server\" \"npm run dev --workspace=@qq-dld/web\"",
     "stop": "node stop.js",
-    "dev": "concurrently -k -n \"API,WEB\" -c \"cyan,green\" \"npm run start --workspace=@qq-dld/server\" \"npm run dev --workspace=@qq-dld/web\"",
+    "dev": "concurrently -k -n \"API,WEB\" -c \"cyan,green\" \"cross-env JWT_SECRET=dev-secret-do-not-use-in-prod npm run start --workspace=@qq-dld/server\" \"npm run dev --workspace=@qq-dld/web\"",
     "build": "npm run build --workspace=@qq-dld/shared && npm run build --workspace=@qq-dld/server && npm run build --workspace=@qq-dld/web",
     "typecheck": "tsc --build",
     "dev:workspaces": "npm run dev --workspace=@qq-dld/web"
@@ -30,6 +30,7 @@
     "@playwright/test": "^1.58.2",
     "@types/node": "^20.12.7",
     "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
     "typescript": "^5.4.5"
   }
 }
