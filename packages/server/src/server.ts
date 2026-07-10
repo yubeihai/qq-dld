@@ -19,7 +19,8 @@ const PUBLIC_ROUTES = new Set<string>([
 
 export async function buildServer(): Promise<FastifyInstance> {
   if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required');
+    process.env.JWT_SECRET = 'dev-secret-do-not-use-in-prod';
+    console.warn('⚠ JWT_SECRET not set. Using dev default. DO NOT use in production.');
   }
 
   DataLayer.initialize();
