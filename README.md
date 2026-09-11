@@ -7,7 +7,6 @@ QQ 大乐斗自动任务系统 - 基于 Node.js 的 Web 自动化工具，支持
 > 🎯 **全新在线平台**
 > - 平台访问地址：**https://dw.qcdld.com/**
 > - Bug反馈 & 功能需求提交：**https://qcdld.com/**
->s://dw.qcdld.com
 > > 👉 下方为新平台界面预览
 >
 > ![QQ大乐斗助手新平台界面](./public/pz.png)
